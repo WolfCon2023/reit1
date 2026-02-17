@@ -3,11 +3,13 @@ import { config } from "./config.js";
 import app from "./app.js";
 import { seed } from "./scripts/seed.js";
 import { startBackupScheduler } from "./services/backupScheduler.js";
+import { verifySmtp } from "./services/email.js";
 
 async function main() {
   await mongoose.connect(config.mongoUri);
   await seed();
   startBackupScheduler();
+  verifySmtp();
   const port = config.port;
   app.listen(port, "0.0.0.0", () => {
     console.log(`API listening on port ${port}`);

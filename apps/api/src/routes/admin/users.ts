@@ -5,6 +5,7 @@ import { requireAuth, requirePermission } from "../../middleware/auth.js";
 import { createUserSchema, updateUserSchema, resetPasswordSchema } from "@reit1/shared";
 import { PERMISSIONS } from "@reit1/shared";
 import { logAudit } from "../../lib/audit.js";
+import { sendWelcomeEmail, sendPasswordResetNotification } from "../../services/email.js";
 
 const router = Router();
 
@@ -45,6 +46,7 @@ router.post("/", requireAuth, requirePermission(PERMISSIONS.USERS_MANAGE), async
     isActive: true,
   });
   await logAudit(req.user!, "user.create", "User", user._id.toString(), { email: user.email });
+  sendWelcomeEmail(user.email, user.name, password).catch(() => {});
   res.status(201).json({
     id: user._id,
     email: user.email,
@@ -89,6 +91,7 @@ router.post("/:id/reset-password", requireAuth, requirePermission(PERMISSIONS.US
   user.passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
   await user.save();
   await logAudit(req.user!, "user.resetPassword", "User", user._id.toString(), {});
+  sendPasswordResetNotification(user.email, req.user!.email).catch(() => {});
   res.json({ ok: true });
 });
 
