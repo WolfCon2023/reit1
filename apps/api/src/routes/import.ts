@@ -52,7 +52,7 @@ router.post("/xlsx", requireAuth, requirePermission(PERMISSIONS.IMPORT_RUN), upl
     totalRows: result.rows.length,
     importedRows: 0,
     errorRows: result.errors.length,
-    errorDetails: result.errors.slice(0, 500),
+    errorDetails: result.errors.slice(0, 500).map((e) => ({ row: e.row, messages: e.errors })),
     validRows: validRowsStored,
     status: "pending",
   });

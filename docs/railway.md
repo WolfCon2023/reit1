@@ -28,11 +28,14 @@
    ```bash
    npm run start -w apps/api
    ```
+5. **Watch Paths:** Add both so shared changes trigger a rebuild:
+   - `/apps/api/**`
+   - `/packages/shared/**`
 5. **Environment variables:**
    - `NODE_ENV=production`
    - `MONGODB_URI` – from MongoDB plugin (reference the plugin variable).
    - `JWT_SECRET` – long random string (e.g. 32+ chars).
-   - `CORS_ORIGIN` – full URL of the web frontend (e.g. `https://reit-web.up.railway.app`).
+   - `CORS_ORIGIN` – full URL **with `https://`** of the web frontend (e.g. `https://reit-web-production.up.railway.app`).
    - `UPLOAD_MAX_MB=10`
    - `BACKUP_DIR=/data/backups`
    - `BACKUP_RETENTION_DAYS=30`
@@ -55,8 +58,11 @@
    ```bash
    npm run start -w apps/web
    ```
-5. **Environment variables:**
-   - `VITE_API_URL` – public URL of the API (e.g. `https://reit-api.up.railway.app`). This is baked into the frontend at build time.
+5. **Watch Paths:** Add both so shared changes trigger a rebuild:
+   - `/apps/web/**`
+   - `/packages/shared/**`
+6. **Environment variables:**
+   - `VITE_API_URL` – full URL **with `https://`** of the API (e.g. `https://reit-api-production.up.railway.app`). This is baked into the frontend at build time.
 
 ## 4. Domains
 

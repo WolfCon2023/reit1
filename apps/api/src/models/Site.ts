@@ -36,7 +36,6 @@ const siteSchema = new mongoose.Schema<SiteDocument>(
   { timestamps: true }
 );
 
-siteSchema.index({ siteId: 1 }, { unique: true });
 siteSchema.index({ isDeleted: 1, stateValue: 1, provider: 1, structureTypeValue: 1, providerResidentValue: 1 });
 siteSchema.index({ isDeleted: 1, siteName: "text", siteId: "text", address: "text", city: "text" });
 

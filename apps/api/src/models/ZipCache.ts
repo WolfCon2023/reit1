@@ -11,6 +11,4 @@ const zipCacheSchema = new mongoose.Schema<ZipCacheDocument>(
   { timestamps: true }
 );
 
-zipCacheSchema.index({ zip: 1 }, { unique: true });
-
 export const ZipCache = mongoose.model<ZipCacheDocument>("ZipCache", zipCacheSchema);

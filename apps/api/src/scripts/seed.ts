@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import { fileURLToPath } from "node:url";
 import { Role, User } from "../models/index.js";
 import { config } from "../config.js";
 import { ROLE_NAMES, ROLE_PERMISSIONS } from "@reit1/shared";
@@ -47,14 +48,20 @@ export async function seed(): Promise<void> {
   console.log("Seeded Super Admin user:", adminEmail);
 }
 
-async function run(): Promise<void> {
-  await mongoose.connect(config.mongoUri);
-  await seed();
-  await mongoose.disconnect();
-  process.exit(0);
-}
+/* Only run standalone when executed directly (e.g. `node dist/scripts/seed.js`) */
+const isMainModule =
+  process.argv[1] &&
+  fileURLToPath(import.meta.url).replace(/\\/g, "/") ===
+    process.argv[1].replace(/\\/g, "/");
 
-run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (isMainModule) {
+  (async () => {
+    await mongoose.connect(config.mongoUri);
+    await seed();
+    await mongoose.disconnect();
+    process.exit(0);
+  })().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}

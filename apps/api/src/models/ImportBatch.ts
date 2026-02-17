@@ -7,7 +7,7 @@ const MAX_VALID_ROWS = 10000;
 const errorDetailSchema = new mongoose.Schema(
   {
     row: Number,
-    errors: [String],
+    messages: [String],
   },
   { _id: false }
 );
