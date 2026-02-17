@@ -14,7 +14,7 @@
     "build:api": "npm run build -w packages/shared && npm run build -w apps/api",
     "build:web": "npm run build -w packages/shared && npm run build -w apps/web",
     "start:api": "node apps/api/dist/index.js",
-    "start:web": "node apps/web/server.js",
+    "start:web": "node apps/web/server.cjs",
     "seed": "npm run seed -w apps/api",
     "lint": "npm run lint -w packages/shared && npm run lint -w apps/api && npm run lint -w apps/web"
   },
