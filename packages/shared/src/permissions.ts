@@ -1,0 +1,56 @@
+/**
+ * RBAC permission constants. Enforce on APIs and UI.
+ */
+export const PERMISSIONS = {
+  SITES_READ: "sites:read",
+  SITES_WRITE: "sites:write",
+  SITES_DELETE: "sites:delete",
+  SITES_EXPORT: "sites:export",
+  IMPORT_RUN: "import:run",
+  IMPORT_TEMPLATE_DOWNLOAD: "import:template:download",
+  USERS_READ: "users:read",
+  USERS_MANAGE: "users:manage",
+  ROLES_READ: "roles:read",
+  ROLES_MANAGE: "roles:manage",
+  AUDIT_READ: "audit:read",
+  BACKUPS_MANAGE: "backups:manage",
+} as const;
+
+export type Permission = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
+
+export const ALL_PERMISSIONS: Permission[] = Object.values(PERMISSIONS);
+
+/** Role names (for seed and checks) */
+export const ROLE_NAMES = {
+  SUPER_ADMIN: "Super Admin",
+  ADMIN: "Admin",
+  DATA_MANAGER: "Data Manager",
+  VIEWER: "Viewer",
+} as const;
+
+/** Role -> permissions mapping for seed */
+export const ROLE_PERMISSIONS: Record<string, Permission[]> = {
+  [ROLE_NAMES.SUPER_ADMIN]: [...ALL_PERMISSIONS],
+  [ROLE_NAMES.ADMIN]: [
+    PERMISSIONS.SITES_READ,
+    PERMISSIONS.SITES_WRITE,
+    PERMISSIONS.SITES_DELETE,
+    PERMISSIONS.SITES_EXPORT,
+    PERMISSIONS.IMPORT_RUN,
+    PERMISSIONS.IMPORT_TEMPLATE_DOWNLOAD,
+    PERMISSIONS.USERS_READ,
+    PERMISSIONS.USERS_MANAGE,
+    PERMISSIONS.ROLES_READ,
+    PERMISSIONS.ROLES_MANAGE,
+    PERMISSIONS.AUDIT_READ,
+    PERMISSIONS.BACKUPS_MANAGE,
+  ],
+  [ROLE_NAMES.DATA_MANAGER]: [
+    PERMISSIONS.SITES_READ,
+    PERMISSIONS.SITES_WRITE,
+    PERMISSIONS.SITES_EXPORT,
+    PERMISSIONS.IMPORT_RUN,
+    PERMISSIONS.IMPORT_TEMPLATE_DOWNLOAD,
+  ],
+  [ROLE_NAMES.VIEWER]: [PERMISSIONS.SITES_READ],
+};

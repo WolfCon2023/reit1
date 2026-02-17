@@ -1,0 +1,17 @@
+export const config = {
+  nodeEnv: process.env.NODE_ENV ?? "development",
+  port: Number(process.env.PORT) || 3001,
+  mongoUri: process.env.MONGODB_URI ?? "mongodb://localhost:27017/reit1",
+  jwtSecret: process.env.JWT_SECRET ?? "dev-secret-change-in-production",
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN ?? "7d",
+  corsOrigin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
+  uploadMaxMb: Number(process.env.UPLOAD_MAX_MB) || 10,
+  backupDir: process.env.BACKUP_DIR ?? "./data/backups",
+  backupRetentionDays: Number(process.env.BACKUP_RETENTION_DAYS) || 30,
+  enableBackupScheduler: process.env.ENABLE_BACKUP_SCHEDULER === "true",
+  backupScheduleHourUtc: Number(process.env.BACKUP_SCHEDULE_HOUR_UTC) || 2,
+  backupScheduleMinuteUtc: Number(process.env.BACKUP_SCHEDULE_MINUTE_UTC) || 0,
+  seedAdminEmail: process.env.SEED_ADMIN_EMAIL,
+  seedAdminPassword: process.env.SEED_ADMIN_PASSWORD,
+  seedAdminName: process.env.SEED_ADMIN_NAME ?? "Super Admin",
+};
