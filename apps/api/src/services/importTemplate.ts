@@ -15,7 +15,7 @@ export async function generateTemplate(): Promise<Buffer> {
   listsSheet.addRow(["STRUCTURE TYPE"]);
   listRow++;
   const structureStart = listRow;
-  STRUCTURE_TYPES.forEach((s) => {
+  STRUCTURE_TYPES.forEach((s: string) => {
     listsSheet.addRow([s]);
     listRow++;
   });
@@ -25,7 +25,7 @@ export async function generateTemplate(): Promise<Buffer> {
   listsSheet.addRow(["PROVIDER RESIDENT"]);
   listRow++;
   const residentStart = listRow;
-  PROVIDER_RESIDENT_OPTIONS.forEach((s) => {
+  PROVIDER_RESIDENT_OPTIONS.forEach((s: string) => {
     listsSheet.addRow([s]);
     listRow++;
   });
@@ -34,7 +34,7 @@ export async function generateTemplate(): Promise<Buffer> {
   listsSheet.addRow(["STATE"]);
   listRow++;
   const stateStart = listRow;
-  US_STATES.forEach((s) => {
+  US_STATES.forEach((s: string) => {
     listsSheet.addRow([s]);
     listRow++;
   });

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
+    "prebuild": "cd ../.. && npm run build -w packages/shared",
     "build": "tsc",
     "start": "node dist/index.js",
     "seed": "node dist/scripts/seed.js"

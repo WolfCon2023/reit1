@@ -15,21 +15,19 @@
 
 ## 2. API service (reit-api)
 
-1. New service from **GitHub repo** (or from root with root `package.json` and monorepo).
-2. **Root directory:** leave default (repo root).
-3. **Build command:**
+1. New service from **GitHub repo**.
+2. **Root directory:** leave as default (repo root `/`). The monorepo root `package.json` defines workspaces — Railway must install from root so `@reit1/shared` is linked.
+3. **Build command** (use the root script that chains shared → api):
    ```bash
-   cd apps/api && npm ci && npm run build
+   npm run build:api
    ```
-   Ensure `packages/shared` is built first (e.g. in a root build step or dependency). If the repo build runs `npm ci` at root, add a build step that builds shared then api:
-   ```bash
-   npm ci && npm run build -w packages/shared && npm run build -w apps/api
-   ```
+   This runs `npm run build -w packages/shared && npm run build -w apps/api`, ensuring the shared package is compiled before the API.
+   
+   > **Why not `npm run build --workspace=reit-api`?** That only runs `tsc` inside `apps/api`. Since `@reit1/shared` must be compiled first (its `dist/` must exist), you need the root `build:api` script which chains the builds in order.
 4. **Start command:**
    ```bash
-   cd apps/api && node dist/index.js
+   npm run start -w apps/api
    ```
-   Or: `npm run start -w apps/api` if root has that script.
 5. **Environment variables:**
    - `NODE_ENV=production`
    - `MONGODB_URI` – from MongoDB plugin (reference the plugin variable).
@@ -48,20 +46,17 @@
 ## 3. Web service (reit-web)
 
 1. New service from same repo.
-2. **Build command:**
+2. **Root directory:** leave as default (repo root `/`).
+3. **Build command** (use the root script that chains shared → web):
    ```bash
-   npm ci && npm run build -w packages/shared && npm run build -w apps/web
+   npm run build:web
    ```
-   Or if the web app does not depend on shared build output:
+4. **Start command:**
    ```bash
-   cd apps/web && npm ci && npm run build
+   npm run start -w apps/web
    ```
-3. **Start command:**
-   ```bash
-   cd apps/web && npm run preview -- --host 0.0.0.0 --port $PORT
-   ```
-4. **Environment variables:**
-   - `VITE_API_URL` – public URL of the API (e.g. `https://reit-api.up.railway.app`).
+5. **Environment variables:**
+   - `VITE_API_URL` – public URL of the API (e.g. `https://reit-api.up.railway.app`). This is baked into the frontend at build time.
 
 ## 4. Domains
 
