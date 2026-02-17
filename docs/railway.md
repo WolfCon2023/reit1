@@ -2,7 +2,7 @@
 
 ## Overview
 
-- **reit-web** – Frontend (Vite build, `preview` on `$PORT`)
+- **reit-web** – Frontend (Vite build, served by `node server.js` on `$PORT`)
 - **reit-api** – Backend (Node, listen on `0.0.0.0` and `process.env.PORT`)
 - **reit-mongodb** – Railway MongoDB plugin
 - **Volume** – Mounted at `/data/backups` on the API service for mongodump backups
