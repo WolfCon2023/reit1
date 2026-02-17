@@ -26,7 +26,7 @@
    > **Why not `npm run build --workspace=reit-api`?** That only runs `tsc` inside `apps/api`. Since `@reit1/shared` must be compiled first (its `dist/` must exist), you need the root `build:api` script which chains the builds in order.
 4. **Start command:**
    ```bash
-   npm run start -w apps/api
+   npm run start:api
    ```
 5. **Watch Paths:** Add both so shared changes trigger a rebuild:
    - `/apps/api/**`
@@ -56,7 +56,7 @@
    ```
 4. **Start command:**
    ```bash
-   npm run start -w apps/web
+   npm run start:web
    ```
 5. **Watch Paths:** Add both so shared changes trigger a rebuild:
    - `/apps/web/**`
