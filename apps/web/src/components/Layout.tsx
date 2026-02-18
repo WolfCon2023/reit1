@@ -5,7 +5,7 @@ import { PERMISSIONS } from "@/lib/permissions";
 
 const NAV = [
   { to: "/", label: "Dashboard" },
-  { to: "/sites", label: "Sites", permission: PERMISSIONS.SITES_READ },
+  { to: "/projects", label: "Projects", permission: PERMISSIONS.PROJECTS_READ },
   { to: "/import", label: "Import", permission: PERMISSIONS.IMPORT_RUN },
   { to: "/admin", label: "Admin", permission: PERMISSIONS.USERS_READ },
 ];

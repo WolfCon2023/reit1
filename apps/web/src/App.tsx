@@ -11,6 +11,11 @@ import { SiteDetail } from "@/pages/SiteDetail";
 import { SiteForm } from "@/pages/SiteForm";
 import { ImportPage } from "@/pages/Import";
 import { Admin } from "@/pages/Admin";
+import { Projects } from "@/pages/Projects";
+import { ProjectDashboard } from "@/pages/ProjectDashboard";
+import { ProjectSites } from "@/pages/ProjectSites";
+import { ProjectSiteDetail } from "@/pages/ProjectSiteDetail";
+import { ProjectSiteForm } from "@/pages/ProjectSiteForm";
 import { PERMISSIONS } from "@/lib/permissions";
 
 const queryClient = new QueryClient({
@@ -61,10 +66,22 @@ export default function App() {
               }
             >
               <Route index element={<Dashboard />} />
+
+              {/* Projects */}
+              <Route path="projects" element={<RequirePermission permission={PERMISSIONS.PROJECTS_READ}><Projects /></RequirePermission>} />
+              <Route path="projects/:projectId" element={<RequirePermission permission={PERMISSIONS.PROJECTS_READ}><ProjectDashboard /></RequirePermission>} />
+              <Route path="projects/:projectId/sites" element={<RequirePermission permission={PERMISSIONS.SITES_READ}><ProjectSites /></RequirePermission>} />
+              <Route path="projects/:projectId/sites/new" element={<RequirePermission permission={PERMISSIONS.SITES_WRITE}><ProjectSiteForm /></RequirePermission>} />
+              <Route path="projects/:projectId/sites/:id" element={<RequirePermission permission={PERMISSIONS.SITES_READ}><ProjectSiteDetail /></RequirePermission>} />
+              <Route path="projects/:projectId/sites/:id/edit" element={<RequirePermission permission={PERMISSIONS.SITES_WRITE}><ProjectSiteForm /></RequirePermission>} />
+              <Route path="projects/:projectId/import" element={<RequirePermission permission={PERMISSIONS.IMPORT_RUN}><ImportPage /></RequirePermission>} />
+
+              {/* Legacy flat routes (kept for backward compat) */}
               <Route path="sites" element={<RequirePermission permission={PERMISSIONS.SITES_READ}><Sites /></RequirePermission>} />
               <Route path="sites/new" element={<RequirePermission permission={PERMISSIONS.SITES_WRITE}><SiteForm /></RequirePermission>} />
               <Route path="sites/:id" element={<RequirePermission permission={PERMISSIONS.SITES_READ}><SiteDetail /></RequirePermission>} />
               <Route path="sites/:id/edit" element={<RequirePermission permission={PERMISSIONS.SITES_WRITE}><SiteForm /></RequirePermission>} />
+
               <Route path="import" element={<RequirePermission permission={PERMISSIONS.IMPORT_RUN}><ImportPage /></RequirePermission>} />
               <Route path="admin" element={<RequirePermission permission={PERMISSIONS.USERS_READ}><Admin /></RequirePermission>} />
               <Route path="admin/*" element={<RequirePermission permission={PERMISSIONS.USERS_READ}><Admin /></RequirePermission>} />

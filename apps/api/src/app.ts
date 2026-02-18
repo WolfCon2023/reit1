@@ -10,6 +10,9 @@ import geoRoutes from "./routes/geo.js";
 import importRoutes from "./routes/import.js";
 import adminRoutes from "./routes/admin/index.js";
 import healthRoutes from "./routes/health.js";
+import projectsRoutes from "./routes/projects.js";
+import projectSitesRoutes from "./routes/projectSites.js";
+import projectImportRoutes from "./routes/projectImport.js";
 
 const app = express();
 
@@ -37,6 +40,9 @@ app.use("/api/health", healthRoutes);
 app.use("/api/geo", geoRoutes);
 app.use("/api/sites", sitesRoutes);
 app.use("/api/import", importRoutes);
+app.use("/api/projects", projectsRoutes);
+app.use("/api/projects/:projectId/sites", projectSitesRoutes);
+app.use("/api/projects/:projectId/import", projectImportRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

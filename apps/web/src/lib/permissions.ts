@@ -11,4 +11,7 @@ export const PERMISSIONS = {
   ROLES_MANAGE: "roles:manage",
   AUDIT_READ: "audit:read",
   BACKUPS_MANAGE: "backups:manage",
+  PROJECTS_READ: "projects:read",
+  PROJECTS_MANAGE: "projects:manage",
+  PROJECTS_EXPORT: "projects:export",
 } as const;

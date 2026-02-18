@@ -14,6 +14,8 @@ const errorDetailSchema = new mongoose.Schema(
 
 const importBatchSchema = new mongoose.Schema<ImportBatchDocument>(
   {
+    projectId: { type: mongoose.Schema.Types.ObjectId, ref: "Project", required: true } as any,
+    importName: String,
     uploadedBy: { type: String, required: true },
     uploadedAt: { type: Date, default: Date.now },
     filename: { type: String, required: true },
@@ -35,6 +37,6 @@ const importBatchSchema = new mongoose.Schema<ImportBatchDocument>(
   { timestamps: true }
 );
 
-importBatchSchema.index({ uploadedAt: -1 });
+importBatchSchema.index({ projectId: 1, uploadedAt: -1 });
 
 export const ImportBatch = mongoose.model<ImportBatchDocument>("ImportBatch", importBatchSchema);

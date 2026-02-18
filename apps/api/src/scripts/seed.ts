@@ -4,11 +4,26 @@ import { fileURLToPath } from "node:url";
 import { Role, User } from "../models/index.js";
 import { config } from "../config.js";
 import { ROLE_NAMES, ROLE_PERMISSIONS } from "@reit1/shared";
+import { migrateProjects } from "./migrateProjects.js";
 
 export async function seed(): Promise<void> {
   const count = await Role.countDocuments();
   if (count > 0) {
-    console.log("Roles already exist, skipping role seed.");
+    // Sync system role permissions with the latest definitions so newly
+    // added permissions (e.g. projects:*) propagate to existing databases.
+    for (const [roleName, perms] of Object.entries(ROLE_PERMISSIONS)) {
+      const role = await Role.findOne({ name: roleName, isSystem: true });
+      if (role) {
+        const current = new Set(role.permissions);
+        const desired = new Set(perms);
+        const missing = perms.filter((p) => !current.has(p));
+        if (missing.length > 0) {
+          role.permissions = [...desired];
+          await role.save();
+          console.log(`Seed: Updated "${roleName}" with ${missing.length} new permissions: ${missing.join(", ")}`);
+        }
+      }
+    }
   } else {
     await Role.create([
       { name: ROLE_NAMES.SUPER_ADMIN, description: "Full access", permissions: ROLE_PERMISSIONS[ROLE_NAMES.SUPER_ADMIN], isSystem: true },
@@ -18,6 +33,8 @@ export async function seed(): Promise<void> {
     ]);
     console.log("Seeded roles.");
   }
+
+  await migrateProjects();
 
   const adminEmail = config.seedAdminEmail;
   const adminPassword = config.seedAdminPassword;

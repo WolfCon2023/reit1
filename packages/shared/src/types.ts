@@ -1,7 +1,21 @@
 import type { Permission } from "./permissions.js";
 
+export interface ProjectDocument {
+  _id: string;
+  name: string;
+  description?: string;
+  companyName?: string;
+  tags?: string[];
+  isArchived: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface SiteDocument {
   _id: string;
+  projectId: string;
   siteId: string;
   siteName: string;
   areaName?: string;
@@ -70,6 +84,8 @@ export interface AuditDocument {
 
 export interface ImportBatchDocument {
   _id: string;
+  projectId: string;
+  importName?: string;
   uploadedBy: string;
   uploadedAt: Date;
   filename: string;

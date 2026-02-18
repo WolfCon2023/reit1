@@ -4,3 +4,4 @@ export { Role } from "./Role.js";
 export { AuditLog } from "./AuditLog.js";
 export { ImportBatch } from "./ImportBatch.js";
 export { ZipCache } from "./ZipCache.js";
+export { Project } from "./Project.js";
