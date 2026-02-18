@@ -11,13 +11,14 @@ const router = Router();
 
 router.get("/", requireAuth, requirePermission(PERMISSIONS.USERS_READ), async (_req, res) => {
   const users = await User.find({})
-    .select("email name roles isActive lastLoginAt createdAt")
+    .select("email name roles isActive mfaEnabled lastLoginAt createdAt")
     .populate("roles", "name")
     .sort({ createdAt: -1 })
     .lean();
   res.json(users.map((u) => ({
     ...u,
     id: u._id,
+    mfaEnabled: !!u.mfaEnabled,
     roles: Array.isArray(u.roles) ? u.roles.map((r: unknown) => {
       const x = r as { _id?: string; name?: string };
       return { _id: x?._id ?? "", name: x?.name ?? String(r) };
@@ -117,6 +118,23 @@ router.post("/:id/enable", requireAuth, requirePermission(PERMISSIONS.USERS_MANA
   await user.save();
   await logAudit(req.user!, "user.enable", "User", user._id.toString(), { email: user.email });
   res.json(user);
+});
+
+router.post("/:id/disable-mfa", requireAuth, requirePermission(PERMISSIONS.USERS_MANAGE), async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  if (!user.mfaEnabled) {
+    res.json({ ok: true, message: "MFA is already disabled" });
+    return;
+  }
+  user.mfaEnabled = false;
+  user.mfaSecret = undefined;
+  await user.save();
+  await logAudit(req.user!, "user.disableMfa", "User", user._id.toString(), { email: user.email });
+  res.json({ ok: true });
 });
 
 export default router;

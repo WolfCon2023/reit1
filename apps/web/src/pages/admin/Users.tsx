@@ -11,7 +11,7 @@ import { useAuthStore } from "@/store/auth";
 import { toast } from "sonner";
 import {
   UserPlus, Pencil, KeyRound, ShieldCheck, ShieldOff,
-  Save, X, Users2,
+  Save, X, Users2, Smartphone,
 } from "lucide-react";
 
 interface UserRow {
@@ -20,6 +20,7 @@ interface UserRow {
   name: string;
   roles: { _id: string; name: string }[];
   isActive: boolean;
+  mfaEnabled: boolean;
   lastLoginAt?: string;
   createdAt: string;
 }
@@ -87,6 +88,12 @@ export function Users() {
   const enableMutation = useMutation({
     mutationFn: (id: string) => api(`/api/admin/users/${id}/enable`, { method: "POST" }),
     onSuccess: () => { toast.success("User enabled"); queryClient.invalidateQueries({ queryKey: ["admin-users"] }); },
+  });
+
+  const disableMfaMutation = useMutation({
+    mutationFn: (id: string) => api(`/api/admin/users/${id}/disable-mfa`, { method: "POST" }),
+    onSuccess: () => { toast.success("MFA disabled for user"); queryClient.invalidateQueries({ queryKey: ["admin-users"] }); },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const startEditing = (u: UserRow) => {
@@ -195,6 +202,7 @@ export function Users() {
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Name</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Roles</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status</th>
+                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">MFA</th>
                 <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Last Login</th>
                 {hasManage && <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground text-right">Actions</th>}
               </tr>
@@ -250,6 +258,13 @@ export function Users() {
                       {u.isActive ? "Active" : "Disabled"}
                     </Badge>
                   </td>
+                  <td className="px-4 py-3">
+                    {u.mfaEnabled ? (
+                      <Badge variant="success">Enabled</Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Off</span>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "Never"}
                   </td>
@@ -296,6 +311,19 @@ export function Users() {
                             >
                               <KeyRound className="h-3.5 w-3.5" />
                             </Button>
+                            {u.mfaEnabled && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  if (confirm(`Disable MFA for ${u.email}?`)) disableMfaMutation.mutate(u._id);
+                                }}
+                                className="gap-1 h-8 text-warning"
+                                title="Disable MFA"
+                              >
+                                <Smartphone className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                           </>
                         )}
                       </div>

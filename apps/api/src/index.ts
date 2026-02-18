@@ -1,3 +1,4 @@
+import "./polyfills.js";
 import mongoose from "mongoose";
 import { config } from "./config.js";
 import app from "./app.js";
