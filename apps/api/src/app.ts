@@ -3,9 +3,6 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
 import { config } from "./config.js";
 import authRoutes from "./routes/auth.js";
 import sitesRoutes from "./routes/sites.js";
@@ -14,19 +11,12 @@ import importRoutes from "./routes/import.js";
 import adminRoutes from "./routes/admin/index.js";
 import healthRoutes from "./routes/health.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 const app = express();
 
-app.use(
-  helmet({
-    crossOriginResourcePolicy: { policy: "cross-origin" },
-    contentSecurityPolicy: false,
-  })
-);
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(
   cors({
-    origin: config.corsOrigin || true,
+    origin: config.corsOrigin,
     credentials: true,
   })
 );
@@ -46,36 +36,6 @@ app.use("/api/geo", geoRoutes);
 app.use("/api/sites", sitesRoutes);
 app.use("/api/import", importRoutes);
 app.use("/api/admin", adminRoutes);
-
-// --- Serve the web frontend from the API ---
-// Look for the web dist in several possible locations
-const possibleDistPaths = [
-  path.resolve(__dirname, "../../web/dist"),           // dev: apps/api/src -> apps/web/dist
-  path.resolve(__dirname, "../../../apps/web/dist"),    // built: apps/api/dist -> apps/web/dist
-  path.resolve(process.cwd(), "apps/web/dist"),         // cwd-relative
-];
-
-let webDistPath: string | null = null;
-for (const p of possibleDistPaths) {
-  if (fs.existsSync(path.join(p, "index.html"))) {
-    webDistPath = p;
-    break;
-  }
-}
-
-if (webDistPath) {
-  console.log(`Serving web frontend from: ${webDistPath}`);
-  app.use(express.static(webDistPath, { maxAge: "1h" }));
-
-  // SPA fallback: any non-API route serves index.html
-  app.get("*", (_req, res, next) => {
-    if (_req.path.startsWith("/api")) return next();
-    res.sendFile(path.join(webDistPath!, "index.html"));
-  });
-} else {
-  console.warn("Web dist not found. Checked:", possibleDistPaths);
-  console.warn("Frontend will not be served from this API instance.");
-}
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   if (err.message === "Only .xlsx files are allowed") {
