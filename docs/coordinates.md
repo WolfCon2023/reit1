@@ -1,6 +1,6 @@
 # Coordinates: NAD83 and WGS84
 
-## Stored coordinates
+## Stored1 coordinates
 
 - **latitude / longitude** – Treated as **WGS84** (decimal degrees).
 - **latitudeNad83 / longitudeNad83** – Stored for every site and always populated (create and update, including import).
