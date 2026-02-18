@@ -24,6 +24,11 @@ import { ProjectDocuments } from "@/pages/ProjectDocuments";
 import { ProjectInsights } from "@/pages/ProjectInsights";
 import { Profile } from "@/pages/Profile";
 import { ProjectRenewals } from "@/pages/ProjectRenewals";
+import { About } from "@/pages/About";
+import { LegalEula } from "@/pages/legal/Eula";
+import { LegalTerms } from "@/pages/legal/Terms";
+import { LegalPrivacy } from "@/pages/legal/Privacy";
+import { PublicShell } from "@/components/PublicShell";
 import { PERMISSIONS } from "@/lib/permissions";
 import { Toaster } from "sonner";
 
@@ -109,6 +114,14 @@ export default function App() {
               <Route path="admin" element={<RequirePermission permission={PERMISSIONS.USERS_READ}><Admin /></RequirePermission>} />
               <Route path="admin/*" element={<RequirePermission permission={PERMISSIONS.USERS_READ}><Admin /></RequirePermission>} />
             </Route>
+            {/* Public pages (no auth required) */}
+            <Route element={<PublicShell />}>
+              <Route path="/about" element={<About />} />
+              <Route path="/legal/eula" element={<LegalEula />} />
+              <Route path="/legal/terms" element={<LegalTerms />} />
+              <Route path="/legal/privacy" element={<LegalPrivacy />} />
+            </Route>
+
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthLoader>

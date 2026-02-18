@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useLocation, useParams } from "react-router-
 import { useAuthStore } from "@/store/auth";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { PageTransition } from "@/components/PageTransition";
+import { AppFooter } from "@/components/AppFooter";
 import { PERMISSIONS } from "@/lib/permissions";
 import {
   LayoutDashboard,
@@ -232,6 +233,10 @@ export function Layout() {
             </PageTransition>
           </div>
         </main>
+
+        <footer className="border-t py-4 print:hidden shrink-0">
+          <AppFooter />
+        </footer>
       </div>
     </div>
   );

@@ -82,3 +82,21 @@
   from { opacity: 0; transform: translateX(-8px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+.legal-page-body,
+.legal-page-body * {
+  white-space: normal !important;
+}
+
+.legal-page-body p,
+.legal-page-body li {
+  white-space: normal !important;
+  word-break: normal !important;
+  overflow-wrap: normal !important;
+  max-width: none !important;
+  display: block;
+}
+
+.legal-page-body li {
+  display: list-item;
+}
