@@ -13,9 +13,14 @@ async function deduplicateRoles(): Promise<void> {
   ];
   const dupes = await Role.aggregate(pipeline);
   for (const d of dupes) {
-    const [_keep, ...remove] = d.ids as string[];
-    await Role.deleteMany({ _id: { $in: remove } });
-    console.log(`Seed: Removed ${remove.length} duplicate "${d._id}" role(s).`);
+    const [keepId, ...removeIds] = d.ids as mongoose.Types.ObjectId[];
+    // Reassign users from duplicate roles to the kept one
+    await User.updateMany(
+      { roles: { $in: removeIds } },
+      { $addToSet: { roles: keepId }, $pullAll: { roles: removeIds } }
+    );
+    await Role.deleteMany({ _id: { $in: removeIds } });
+    console.log(`Seed: Merged ${removeIds.length} duplicate "${d._id}" role(s) and reassigned users.`);
   }
 }
 
@@ -24,18 +29,21 @@ export async function seed(): Promise<void> {
 
   const count = await Role.countDocuments();
   if (count > 0) {
-    // Sync system role permissions with the latest definitions so newly
-    // added permissions (e.g. projects:*) propagate to existing databases.
+    // Sync ALL role documents matching each system role name with the
+    // latest permission definitions. This handles roles that lost isSystem
+    // or were recreated through the admin UI.
     for (const [roleName, perms] of Object.entries(ROLE_PERMISSIONS)) {
-      const role = await Role.findOne({ name: roleName, isSystem: true });
-      if (role) {
+      const matchingRoles = await Role.find({ name: roleName });
+      for (const role of matchingRoles) {
         const current = new Set(role.permissions);
         const desired = new Set(perms);
         const missing = perms.filter((p) => !current.has(p));
-        if (missing.length > 0) {
+        const needsSystemFlag = !role.isSystem;
+        if (missing.length > 0 || needsSystemFlag) {
           role.permissions = [...desired];
+          role.isSystem = true;
           await role.save();
-          console.log(`Seed: Updated "${roleName}" with ${missing.length} new permissions: ${missing.join(", ")}`);
+          console.log(`Seed: Synced "${roleName}" — ${missing.length} new permissions${needsSystemFlag ? ", restored isSystem flag" : ""}`);
         }
       }
     }
