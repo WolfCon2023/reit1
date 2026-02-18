@@ -42,6 +42,7 @@ export interface SiteDocument {
   latitudeNad83: number;
   longitudeNad83: number;
   siteAltId?: string;
+  siteLocation?: { type: "Point"; coordinates: [number, number] };
   isDeleted?: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -105,6 +106,57 @@ export interface ZipCacheDocument {
   city?: string;
   state?: string;
   county?: string;
+  updatedAt: Date;
+}
+
+export interface LeaseDocument {
+  _id: string;
+  projectId: string;
+  siteId: string;
+  tenantName: string;
+  leaseStartDate: Date;
+  leaseEndDate: Date;
+  monthlyRent: number;
+  escalationPercent?: number;
+  status: "active" | "expired" | "pending" | "terminated";
+  notes?: string;
+  isDeleted?: boolean;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface DocumentRecord {
+  _id: string;
+  projectId: string;
+  siteId?: string;
+  category: "Permit" | "Zoning" | "Lease" | "Engineering" | "Insurance" | "Other";
+  title: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  storageProvider: "local-volume";
+  storagePath: string;
+  expiresAt?: Date;
+  version: number;
+  isDeleted?: boolean;
+  uploadedAt: Date;
+  uploadedBy: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SavedViewDocument {
+  _id: string;
+  projectId: string;
+  name: string;
+  resourceType: "sites";
+  query: Record<string, unknown>;
+  columns?: string[];
+  isDefault?: boolean;
+  createdBy?: string;
+  createdAt: Date;
   updatedAt: Date;
 }
 

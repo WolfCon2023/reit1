@@ -1,5 +1,9 @@
 const API_URL = (import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_API_URL ?? "";
 
+export function getBaseUrl(): string {
+  return API_URL;
+}
+
 type ApiOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
 function clearAuth() {

@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth";
+import { useFeaturesStore } from "@/store/features";
 import { api } from "@/lib/api";
 import { Layout } from "@/components/Layout";
 import { Login } from "@/pages/Login";
@@ -16,6 +17,11 @@ import { ProjectDashboard } from "@/pages/ProjectDashboard";
 import { ProjectSites } from "@/pages/ProjectSites";
 import { ProjectSiteDetail } from "@/pages/ProjectSiteDetail";
 import { ProjectSiteForm } from "@/pages/ProjectSiteForm";
+import { ProjectMap } from "@/pages/ProjectMap";
+import { ProjectLeases } from "@/pages/ProjectLeases";
+import { ProjectLeaseForm } from "@/pages/ProjectLeaseForm";
+import { ProjectDocuments } from "@/pages/ProjectDocuments";
+import { ProjectInsights } from "@/pages/ProjectInsights";
 import { PERMISSIONS } from "@/lib/permissions";
 
 const queryClient = new QueryClient({
@@ -39,6 +45,11 @@ function RequirePermission({ permission, children }: { permission: string; child
 function AuthLoader({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
   const setUser = useAuthStore((s) => s.setUser);
+  const loadFlags = useFeaturesStore((s) => s.loadFlags);
+
+  useEffect(() => {
+    loadFlags();
+  }, [loadFlags]);
 
   useEffect(() => {
     if (!token) return;
@@ -74,6 +85,12 @@ export default function App() {
               <Route path="projects/:projectId/sites/new" element={<RequirePermission permission={PERMISSIONS.SITES_WRITE}><ProjectSiteForm /></RequirePermission>} />
               <Route path="projects/:projectId/sites/:id" element={<RequirePermission permission={PERMISSIONS.SITES_READ}><ProjectSiteDetail /></RequirePermission>} />
               <Route path="projects/:projectId/sites/:id/edit" element={<RequirePermission permission={PERMISSIONS.SITES_WRITE}><ProjectSiteForm /></RequirePermission>} />
+              <Route path="projects/:projectId/map" element={<RequirePermission permission={PERMISSIONS.SITES_READ}><ProjectMap /></RequirePermission>} />
+              <Route path="projects/:projectId/leases" element={<RequirePermission permission={PERMISSIONS.LEASES_READ}><ProjectLeases /></RequirePermission>} />
+              <Route path="projects/:projectId/leases/new" element={<RequirePermission permission={PERMISSIONS.LEASES_WRITE}><ProjectLeaseForm /></RequirePermission>} />
+              <Route path="projects/:projectId/leases/:leaseId/edit" element={<RequirePermission permission={PERMISSIONS.LEASES_WRITE}><ProjectLeaseForm /></RequirePermission>} />
+              <Route path="projects/:projectId/documents" element={<RequirePermission permission={PERMISSIONS.DOCUMENTS_READ}><ProjectDocuments /></RequirePermission>} />
+              <Route path="projects/:projectId/insights" element={<RequirePermission permission={PERMISSIONS.INSIGHTS_READ}><ProjectInsights /></RequirePermission>} />
               <Route path="projects/:projectId/import" element={<RequirePermission permission={PERMISSIONS.IMPORT_RUN}><ImportPage /></RequirePermission>} />
 
               {/* Legacy flat routes (kept for backward compat) */}

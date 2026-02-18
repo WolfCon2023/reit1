@@ -5,29 +5,29 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/Button";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-interface SitesRes {
-  totalCount: number;
-}
-
-interface ProjectsRes {
-  totalCount: number;
+interface GlobalMetrics {
+  totalProjects: number;
+  totalSites: number;
+  avgStructureHeight: number;
+  sitesByState: { state: string; count: number }[];
+  sitesByStructureType: { type: string; count: number }[];
+  sitesByProvider: { provider: string; count: number }[];
 }
 
 export function Dashboard() {
   const hasProjects = useAuthStore((s) => s.hasPermission(PERMISSIONS.PROJECTS_READ));
-  const { data: sites } = useQuery({
-    queryKey: ["sites-count"],
-    queryFn: () => api<SitesRes>("/api/sites?pageSize=1"),
-  });
-  const { data: projects } = useQuery({
-    queryKey: ["projects-count"],
-    queryFn: () => api<ProjectsRes>("/api/projects?pageSize=1"),
+
+  const { data: metrics } = useQuery({
+    queryKey: ["global-metrics"],
+    queryFn: () => api<GlobalMetrics>("/api/metrics"),
     enabled: hasProjects,
   });
 
-  const totalSites = sites?.totalCount ?? 0;
-  const totalProjects = projects?.totalCount ?? 0;
+  const totalSites = metrics?.totalSites ?? 0;
+  const totalProjects = metrics?.totalProjects ?? 0;
+  const stateData = (metrics?.sitesByState ?? []).slice(0, 5);
 
   return (
     <div className="space-y-8">
@@ -35,7 +35,7 @@ export function Dashboard() {
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-muted-foreground mt-1">Overview of projects, sites, and recent activity</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Projects</CardTitle>
@@ -56,6 +56,15 @@ export function Dashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Structure Height</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics?.avgStructureHeight ?? "—"} ft</div>
+            <p className="text-xs text-muted-foreground mt-1">Across all projects</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-2">
@@ -68,6 +77,25 @@ export function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
+      {stateData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Sites by State (Top 5)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={stateData} layout="vertical" margin={{ left: 40 }}>
+                <XAxis type="number" />
+                <YAxis type="category" dataKey="state" width={40} tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="count" fill="#2563eb" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Getting Started</CardTitle>

@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from "recharts";
 
 interface ProjectDetail {
   _id: string;
@@ -25,14 +29,38 @@ interface ProjectDetail {
   updatedAt: string;
 }
 
+interface ProjectMetrics {
+  totalSites: number;
+  avgStructureHeight: number;
+  lastImportAt: string | null;
+  lastUpdatedAt: string | null;
+  sitesByState: { state: string; count: number }[];
+  sitesByStructureType: { type: string; count: number }[];
+  sitesByProvider: { provider: string; count: number }[];
+}
+
+const COLORS = [
+  "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#16a34a",
+  "#0891b2", "#4f46e5", "#c026d3", "#d97706", "#059669",
+];
+
 export function ProjectDashboard() {
   const { projectId } = useParams<{ projectId: string }>();
   const hasImport = useAuthStore((s) => s.hasPermission(PERMISSIONS.IMPORT_RUN));
   const hasSitesRead = useAuthStore((s) => s.hasPermission(PERMISSIONS.SITES_READ));
+  const hasLeasesRead = useAuthStore((s) => s.hasPermission(PERMISSIONS.LEASES_READ));
+  const hasDocsRead = useAuthStore((s) => s.hasPermission(PERMISSIONS.DOCUMENTS_READ));
+  const hasInsights = useAuthStore((s) => s.hasPermission(PERMISSIONS.INSIGHTS_READ));
 
   const { data: project, isLoading, error, refetch } = useQuery({
     queryKey: ["projects", projectId],
     queryFn: () => api<ProjectDetail>(`/api/projects/${projectId}`),
+    enabled: !!projectId,
+  });
+
+  const { data: metrics } = useQuery({
+    queryKey: ["projects", projectId, "metrics"],
+    queryFn: () => api<ProjectMetrics>(`/api/projects/${projectId}/metrics`),
     enabled: !!projectId,
   });
 
@@ -56,6 +84,10 @@ export function ProjectDashboard() {
     );
   }
 
+  const stateData = (metrics?.sitesByState ?? []).slice(0, 10);
+  const structureData = metrics?.sitesByStructureType ?? [];
+  const providerData = (metrics?.sitesByProvider ?? []).slice(0, 10);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-1">
@@ -73,7 +105,7 @@ export function ProjectDashboard() {
         {project.description && <p className="text-muted-foreground">{project.description}</p>}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
@@ -81,6 +113,16 @@ export function ProjectDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">{project.siteCount}</div>
             <p className="text-xs text-muted-foreground mt-1">Sites in this project</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Structure Height</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{metrics?.avgStructureHeight ?? "—"} ft</div>
+            <p className="text-xs text-muted-foreground mt-1">Across all sites</p>
           </CardContent>
         </Card>
 
@@ -119,10 +161,30 @@ export function ProjectDashboard() {
         </Card>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         {hasSitesRead && (
           <Button asChild>
             <Link to={`/projects/${projectId}/sites`}>View Sites</Link>
+          </Button>
+        )}
+        {hasSitesRead && (
+          <Button variant="outline" asChild>
+            <Link to={`/projects/${projectId}/map`}>Map View</Link>
+          </Button>
+        )}
+        {hasLeasesRead && (
+          <Button variant="outline" asChild>
+            <Link to={`/projects/${projectId}/leases`}>Leases</Link>
+          </Button>
+        )}
+        {hasDocsRead && (
+          <Button variant="outline" asChild>
+            <Link to={`/projects/${projectId}/documents`}>Documents</Link>
+          </Button>
+        )}
+        {hasInsights && (
+          <Button variant="outline" asChild>
+            <Link to={`/projects/${projectId}/insights`}>Insights</Link>
           </Button>
         )}
         {hasImport && (
@@ -131,6 +193,76 @@ export function ProjectDashboard() {
           </Button>
         )}
       </div>
+
+      {/* Charts */}
+      {metrics && metrics.totalSites > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {stateData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Sites by State (Top 10)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={stateData} layout="vertical" margin={{ left: 40 }}>
+                    <XAxis type="number" />
+                    <YAxis type="category" dataKey="state" width={40} tick={{ fontSize: 12 }} />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#2563eb" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {structureData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Sites by Structure Type</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={structureData}
+                      dataKey="count"
+                      nameKey="type"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ name, percent }: { name?: string; percent?: number }) => `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                    >
+                      {structureData.map((_, i) => (
+                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {providerData.length > 0 && (
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-base">Sites by Provider (Top 10)</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={providerData} margin={{ bottom: 60 }}>
+                    <XAxis dataKey="provider" angle={-45} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       <Card>
         <CardHeader>

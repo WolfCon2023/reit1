@@ -55,6 +55,34 @@ export async function migrateProjects(): Promise<void> {
     console.log(`Migration: Assigned ${result.modifiedCount} import batches to "${DEFAULT_PROJECT_NAME}".`);
   }
 
+  // Backfill siteLocation for sites that have lat/lon but no siteLocation
+  try {
+    const sitesWithoutLocation = await Site.countDocuments({
+      latitude: { $exists: true, $ne: 0 },
+      longitude: { $exists: true, $ne: 0 },
+      "siteLocation.coordinates": { $exists: false },
+    });
+    if (sitesWithoutLocation > 0) {
+      const cursor = Site.find({
+        latitude: { $exists: true, $ne: 0 },
+        longitude: { $exists: true, $ne: 0 },
+        "siteLocation.coordinates": { $exists: false },
+      }).cursor();
+      let backfilled = 0;
+      for await (const site of cursor) {
+        site.siteLocation = {
+          type: "Point",
+          coordinates: [site.longitude, site.latitude],
+        } as any;
+        await site.save();
+        backfilled++;
+      }
+      console.log(`Migration: Backfilled siteLocation for ${backfilled} sites.`);
+    }
+  } catch (err) {
+    console.warn("Migration: siteLocation backfill error:", (err as Error).message);
+  }
+
   console.log("Migration: Complete.");
 }
 

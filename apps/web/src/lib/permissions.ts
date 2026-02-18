@@ -14,4 +14,13 @@ export const PERMISSIONS = {
   PROJECTS_READ: "projects:read",
   PROJECTS_MANAGE: "projects:manage",
   PROJECTS_EXPORT: "projects:export",
+  LEASES_READ: "leases:read",
+  LEASES_WRITE: "leases:write",
+  LEASES_DELETE: "leases:delete",
+  REVENUE_READ: "revenue:read",
+  DOCUMENTS_READ: "documents:read",
+  DOCUMENTS_WRITE: "documents:write",
+  DOCUMENTS_DELETE: "documents:delete",
+  INSIGHTS_READ: "insights:read",
+  VIEWS_MANAGE: "views:manage",
 } as const;

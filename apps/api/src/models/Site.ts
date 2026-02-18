@@ -30,6 +30,10 @@ const siteSchema = new mongoose.Schema<SiteDocument>(
     latitudeNad83: { type: Number, required: true },
     longitudeNad83: { type: Number, required: true },
     siteAltId: String,
+    siteLocation: {
+      type: { type: String, enum: ["Point"], default: "Point" },
+      coordinates: { type: [Number] },
+    },
     isDeleted: { type: Boolean, default: false },
     createdBy: String,
     updatedBy: String,
@@ -40,5 +44,6 @@ const siteSchema = new mongoose.Schema<SiteDocument>(
 siteSchema.index({ projectId: 1, siteId: 1 }, { unique: true });
 siteSchema.index({ projectId: 1, isDeleted: 1, stateValue: 1, provider: 1, structureTypeValue: 1, providerResidentValue: 1 });
 siteSchema.index({ projectId: 1, isDeleted: 1, siteName: "text", siteId: "text", address: "text", city: "text" });
+siteSchema.index({ siteLocation: "2dsphere" });
 
 export const Site = mongoose.model<SiteDocument>("Site", siteSchema);

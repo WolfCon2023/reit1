@@ -5,3 +5,6 @@ export { AuditLog } from "./AuditLog.js";
 export { ImportBatch } from "./ImportBatch.js";
 export { ZipCache } from "./ZipCache.js";
 export { Project } from "./Project.js";
+export { Lease } from "./Lease.js";
+export { Document } from "./Document.js";
+export { SavedView } from "./SavedView.js";

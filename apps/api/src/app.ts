@@ -13,6 +13,15 @@ import healthRoutes from "./routes/health.js";
 import projectsRoutes from "./routes/projects.js";
 import projectSitesRoutes from "./routes/projectSites.js";
 import projectImportRoutes from "./routes/projectImport.js";
+import projectMetricsRoutes from "./routes/projectMetrics.js";
+import projectSitesMapRoutes from "./routes/projectSitesMap.js";
+import globalMetricsRoutes from "./routes/globalMetrics.js";
+import projectLeasesRoutes from "./routes/projectLeases.js";
+import projectRevenueRoutes from "./routes/projectRevenue.js";
+import projectDocumentsRoutes from "./routes/projectDocuments.js";
+import projectInsightsRoutes from "./routes/projectInsights.js";
+import projectViewsRoutes from "./routes/projectViews.js";
+import featuresRoutes from "./routes/features.js";
 
 const app = express();
 
@@ -41,8 +50,17 @@ app.use("/api/geo", geoRoutes);
 app.use("/api/sites", sitesRoutes);
 app.use("/api/import", importRoutes);
 app.use("/api/projects", projectsRoutes);
+app.use("/api/projects/:projectId/metrics", projectMetricsRoutes);
+app.use("/api/projects/:projectId/sites/map", projectSitesMapRoutes);
 app.use("/api/projects/:projectId/sites", projectSitesRoutes);
 app.use("/api/projects/:projectId/import", projectImportRoutes);
+app.use("/api/projects/:projectId/leases", projectLeasesRoutes);
+app.use("/api/projects/:projectId/revenue", projectRevenueRoutes);
+app.use("/api/projects/:projectId/documents", projectDocumentsRoutes);
+app.use("/api/projects/:projectId/insights", projectInsightsRoutes);
+app.use("/api/projects/:projectId/views", projectViewsRoutes);
+app.use("/api/metrics", globalMetricsRoutes);
+app.use("/api/features", featuresRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

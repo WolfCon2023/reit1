@@ -14,6 +14,8 @@ export const config = {
   seedAdminEmail: process.env.SEED_ADMIN_EMAIL,
   seedAdminPassword: process.env.SEED_ADMIN_PASSWORD,
   seedAdminName: process.env.SEED_ADMIN_NAME ?? "Super Admin",
+  documentUploadDir: process.env.DOCUMENT_UPLOAD_DIR ?? "/data/uploads",
+  documentMaxMb: Number(process.env.DOCUMENT_MAX_MB) || 25,
   smtp: {
     host: process.env.SMTP_HOST ?? "",
     port: Number(process.env.SMTP_PORT) || 587,

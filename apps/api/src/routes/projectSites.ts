@@ -118,6 +118,7 @@ router.post("/", requireAuth, requirePermission(PERMISSIONS.SITES_WRITE), async 
     ...nad83,
     projectId: proj._id,
     zipFull: normalizeZipFull(data.zipCode),
+    siteLocation: { type: "Point", coordinates: [data.longitude, data.latitude] },
     createdBy: req.user!.userId,
     updatedBy: req.user!.userId,
   });
@@ -151,6 +152,7 @@ router.put("/:id", requireAuth, requirePermission(PERMISSIONS.SITES_WRITE), asyn
   if (data.latitude != null && data.longitude != null) {
     const nad83 = ensureNad83(data.latitude, data.longitude);
     Object.assign(site, data, nad83);
+    site.siteLocation = { type: "Point", coordinates: [data.longitude, data.latitude] } as any;
   } else {
     Object.assign(site, data);
   }
@@ -159,6 +161,62 @@ router.put("/:id", requireAuth, requirePermission(PERMISSIONS.SITES_WRITE), asyn
   await site.save();
   await logAudit(req.user!, "site.update", "Site", site._id.toString(), { siteId: site.siteId, projectId });
   res.json(site);
+});
+
+router.post("/bulk", requireAuth, async (req, res) => {
+  const { projectId } = req.params;
+  const proj = await resolveProject(projectId);
+  if (!proj) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const { action, siteIds, patch } = req.body;
+  if (!Array.isArray(siteIds) || siteIds.length === 0) {
+    res.status(400).json({ error: "siteIds array is required" });
+    return;
+  }
+  if (!["update", "delete"].includes(action)) {
+    res.status(400).json({ error: "action must be 'update' or 'delete'" });
+    return;
+  }
+
+  const user = req.user!;
+  if (action === "delete") {
+    if (!user.permissions.includes(PERMISSIONS.SITES_DELETE)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    const result = await Site.updateMany(
+      { _id: { $in: siteIds }, projectId: proj._id, isDeleted: { $ne: true } },
+      { $set: { isDeleted: true, updatedBy: user.userId } }
+    );
+    await logAudit(user, "site.bulk_delete", "Site", undefined, { count: result.modifiedCount, projectId });
+    res.json({ ok: true, modifiedCount: result.modifiedCount });
+  } else {
+    if (!user.permissions.includes(PERMISSIONS.SITES_WRITE)) {
+      res.status(403).json({ error: "Forbidden" });
+      return;
+    }
+    if (!patch || typeof patch !== "object") {
+      res.status(400).json({ error: "patch object is required for update action" });
+      return;
+    }
+    const allowed = ["structureTypeValue", "provider", "stateValue", "ge", "siteType"];
+    const cleanPatch: Record<string, unknown> = {};
+    for (const key of allowed) {
+      if (patch[key] !== undefined) cleanPatch[key] = patch[key];
+    }
+    cleanPatch.updatedBy = user.userId;
+
+    const result = await Site.updateMany(
+      { _id: { $in: siteIds }, projectId: proj._id, isDeleted: { $ne: true } },
+      { $set: cleanPatch }
+    );
+    await logAudit(user, "site.bulk_update", "Site", undefined, {
+      count: result.modifiedCount,
+      fields: Object.keys(cleanPatch).filter((k) => k !== "updatedBy"),
+      projectId,
+    });
+    res.json({ ok: true, modifiedCount: result.modifiedCount });
+  }
 });
 
 router.delete("/:id", requireAuth, requirePermission(PERMISSIONS.SITES_DELETE), async (req, res) => {
