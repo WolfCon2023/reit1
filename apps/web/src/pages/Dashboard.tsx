@@ -3,9 +3,19 @@ import { Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { StatCard } from "@/components/ui/StatCard";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  FolderKanban,
+  MapPin,
+  Ruler,
+  Zap,
+  ArrowRight,
+  Upload,
+  Clock,
+} from "lucide-react";
 
 interface GlobalMetrics {
   totalProjects: number;
@@ -33,55 +43,44 @@ export function Dashboard() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Overview of projects, sites, and recent activity</p>
+        <p className="text-muted-foreground mt-1">Overview of your REIT portfolio</p>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Projects</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalProjects}</div>
-            <p className="text-xs text-muted-foreground mt-1">Active projects</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalSites}</div>
-            <p className="text-xs text-muted-foreground mt-1">Sites across all projects</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Structure Height</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics?.avgStructureHeight ?? "—"} ft</div>
-            <p className="text-xs text-muted-foreground mt-1">Across all projects</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/projects">View Projects</Link>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Projects" value={totalProjects} subtitle="Active projects" icon={FolderKanban} iconColor="text-blue-600" />
+        <StatCard title="Total Sites" value={totalSites} subtitle="Sites across all projects" icon={MapPin} iconColor="text-emerald-600" />
+        <StatCard title="Avg Structure Height" value={`${metrics?.avgStructureHeight ?? "—"} ft`} subtitle="Across all projects" icon={Ruler} iconColor="text-violet-600" />
+        <div className="rounded-lg border bg-card p-6 shadow-card hover:shadow-card-hover transition-all duration-200">
+          <div className="flex items-start justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-muted-foreground">Quick Actions</p>
+            </div>
+            <div className="rounded-lg bg-amber-100 dark:bg-amber-950/30 p-2.5">
+              <Zap className="h-5 w-5 text-amber-600" />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2 mt-4">
+            <Button variant="outline" size="sm" asChild className="justify-between">
+              <Link to="/projects">
+                View Projects <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/import">Import Sites</Link>
+            <Button variant="outline" size="sm" asChild className="justify-between">
+              <Link to="/import">
+                Import Sites <Upload className="h-3.5 w-3.5" />
+              </Link>
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {stateData.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Sites by State (Top 5)</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              Sites by State (Top 5)
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={220}>
@@ -89,7 +88,7 @@ export function Dashboard() {
                 <XAxis type="number" />
                 <YAxis type="category" dataKey="state" width={40} tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="count" fill="#2563eb" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="count" fill="hsl(221, 83%, 53%)" radius={[0, 6, 6, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -100,13 +99,46 @@ export function Dashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Getting Started</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-primary" />
+            Getting Started
+          </CardTitle>
           <CardDescription>Manage your REIT site data by project</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>1. Create or select a <Link to="/projects" className="text-primary underline">Project</Link> to group your site data.</p>
-          <p>2. Import sites into a project from the <Link to="/import" className="text-primary underline">Import</Link> page, or add sites manually.</p>
-          <p>3. View, edit, and export project sites from the project dashboard.</p>
+        <CardContent>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="flex items-start gap-3 rounded-lg border p-4 bg-accent/30">
+              <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                <span className="text-sm font-bold text-primary">1</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Create a Project</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  <Link to="/projects" className="text-primary hover:underline">Go to Projects</Link> to create or select one.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-lg border p-4 bg-accent/30">
+              <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                <span className="text-sm font-bold text-primary">2</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Import Sites</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Upload site data from the <Link to="/import" className="text-primary hover:underline">Import</Link> page.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 rounded-lg border p-4 bg-accent/30">
+              <div className="rounded-full bg-primary/10 p-2 shrink-0">
+                <span className="text-sm font-bold text-primary">3</span>
+              </div>
+              <div>
+                <p className="text-sm font-medium">Manage & Export</p>
+                <p className="text-xs text-muted-foreground mt-1">View, edit, and export from the project dashboard.</p>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -125,17 +157,25 @@ function ActivityFeed() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Recent Activity</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <Clock className="h-5 w-5 text-primary" />
+          Recent Activity
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {items.map((item) => (
-            <div key={item._id} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
-              <div>
-                <span className="font-medium">{item.actorEmail}</span>
-                <span className="text-muted-foreground ml-1">{item.label}</span>
+        <div className="space-y-1">
+          {items.map((item, idx) => (
+            <div key={item._id} className={`flex items-center justify-between py-2.5 text-sm ${idx < items.length - 1 ? "border-b" : ""}`}>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-semibold text-primary">{item.actorEmail.charAt(0).toUpperCase()}</span>
+                </div>
+                <div className="min-w-0">
+                  <span className="font-medium">{item.actorEmail.split("@")[0]}</span>
+                  <span className="text-muted-foreground ml-1.5">{item.label}</span>
+                </div>
               </div>
-              <span className="text-xs text-muted-foreground">{formatRelative(item.createdAt)}</span>
+              <span className="text-xs text-muted-foreground shrink-0 ml-4">{formatRelative(item.createdAt)}</span>
             </div>
           ))}
         </div>

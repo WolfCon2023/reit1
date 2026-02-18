@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { useAuthStore } from "@/store/auth";
+import { toast } from "sonner";
+import { UserCircle, Key } from "lucide-react";
 
 interface ProfileData {
   _id: string;
@@ -39,6 +41,7 @@ export function Profile() {
   const updateNameMut = useMutation({
     mutationFn: () => api("/api/profile", { method: "PUT", body: { name } }),
     onSuccess: () => {
+      toast.success("Profile updated successfully");
       setProfileMsg("Profile updated successfully.");
       queryClient.invalidateQueries({ queryKey: ["profile"] });
       if (user) {
@@ -46,6 +49,7 @@ export function Profile() {
       }
       setTimeout(() => setProfileMsg(""), 3000);
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const changePasswordMut = useMutation({
@@ -55,6 +59,7 @@ export function Profile() {
         body: { currentPassword, newPassword },
       }),
     onSuccess: () => {
+      toast.success("Password changed successfully");
       setPasswordMsg("Password changed successfully.");
       setCurrentPassword("");
       setNewPassword("");
@@ -62,7 +67,7 @@ export function Profile() {
       setPasswordError("");
       setTimeout(() => setPasswordMsg(""), 3000);
     },
-    onError: (err: Error) => setPasswordError(err.message),
+    onError: (err: Error) => { setPasswordError(err.message); toast.error(err.message); },
   });
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
@@ -93,7 +98,12 @@ export function Profile() {
       <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
 
       <Card>
-        <CardHeader><CardTitle>Account Information</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCircle className="h-5 w-5 text-primary" />
+            Account Information
+          </CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <label className="text-sm font-medium">Email</label>
@@ -121,7 +131,12 @@ export function Profile() {
       </Card>
 
       <Card>
-        <CardHeader><CardTitle>Change Password</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Key className="h-5 w-5 text-primary" />
+            Change Password
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>

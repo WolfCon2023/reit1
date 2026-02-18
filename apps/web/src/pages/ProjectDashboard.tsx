@@ -3,12 +3,18 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+import { StatCard } from "@/components/ui/StatCard";
+import { Badge } from "@/components/ui/Badge";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from "recharts";
+import {
+  MapPin, Ruler, Upload, Calendar,
+  Map, Receipt, FileText, Lightbulb, RotateCcw, Building2, LayoutDashboard,
+} from "lucide-react";
 
 interface ProjectDetail {
   _id: string;
@@ -40,8 +46,8 @@ interface ProjectMetrics {
 }
 
 const COLORS = [
-  "#2563eb", "#7c3aed", "#db2777", "#ea580c", "#16a34a",
-  "#0891b2", "#4f46e5", "#c026d3", "#d97706", "#059669",
+  "#3b82f6", "#8b5cf6", "#ec4899", "#f97316", "#22c55e",
+  "#06b6d4", "#6366f1", "#d946ef", "#eab308", "#14b8a6",
 ];
 
 export function ProjectDashboard() {
@@ -68,8 +74,8 @@ export function ProjectDashboard() {
     return (
       <div className="space-y-6">
         <div className="h-8 w-48 bg-muted animate-pulse rounded" />
-        <div className="grid gap-4 md:grid-cols-3">
-          {[...Array(3)].map((_, i) => <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />)}
+        <div className="grid gap-4 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => <div key={i} className="h-28 bg-muted animate-pulse rounded-lg" />)}
         </div>
       </div>
     );
@@ -88,115 +94,70 @@ export function ProjectDashboard() {
   const structureData = metrics?.sitesByStructureType ?? [];
   const providerData = (metrics?.sitesByProvider ?? []).slice(0, 10);
 
+  const quickLinks = [
+    { label: "Sites", icon: LayoutDashboard, to: `/projects/${projectId}/sites`, show: hasSitesRead },
+    { label: "Map View", icon: Map, to: `/projects/${projectId}/map`, show: hasSitesRead },
+    { label: "Leases", icon: Receipt, to: `/projects/${projectId}/leases`, show: hasLeasesRead },
+    { label: "Renewals", icon: RotateCcw, to: `/projects/${projectId}/renewals`, show: hasLeasesRead },
+    { label: "Documents", icon: FileText, to: `/projects/${projectId}/documents`, show: hasDocsRead },
+    { label: "Insights", icon: Lightbulb, to: `/projects/${projectId}/insights`, show: hasInsights },
+    { label: "Import", icon: Upload, to: `/projects/${projectId}/import`, show: hasImport },
+  ].filter((l) => l.show);
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link to="/projects" className="hover:text-primary">Projects</Link>
+          <Link to="/projects" className="hover:text-primary transition-colors">Projects</Link>
           <span>/</span>
           <span>{project.name}</span>
         </div>
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
-          {project.isArchived && (
-            <span className="inline-flex items-center rounded-full bg-muted px-3 py-1 text-sm text-muted-foreground">Archived</span>
-          )}
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">{project.name}</h1>
+            {project.isArchived ? (
+              <Badge variant="muted">Archived</Badge>
+            ) : (
+              <Badge variant="success">Active</Badge>
+            )}
+          </div>
         </div>
         {project.description && <p className="text-muted-foreground">{project.description}</p>}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sites</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{project.siteCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">Sites in this project</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Structure Height</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{metrics?.avgStructureHeight ?? "—"} ft</div>
-            <p className="text-xs text-muted-foreground mt-1">Across all sites</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Import</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {project.lastImport ? (
-              <>
-                <div className="text-2xl font-bold">{project.lastImport.importedRows} rows</div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {project.lastImport.importName || project.lastImport.filename} &middot;{" "}
-                  {new Date(project.lastImport.uploadedAt).toLocaleDateString()}
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="text-2xl font-bold text-muted-foreground">—</div>
-                <p className="text-xs text-muted-foreground mt-1">No imports yet</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last Updated</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {project.lastUpdatedSite ? new Date(project.lastUpdatedSite).toLocaleDateString() : "—"}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Most recent site change</p>
-          </CardContent>
-        </Card>
+      {/* Stat cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard title="Total Sites" value={project.siteCount} subtitle="Sites in this project" icon={MapPin} iconColor="text-blue-600" />
+        <StatCard title="Avg Structure Height" value={`${metrics?.avgStructureHeight ?? "—"} ft`} subtitle="Across all sites" icon={Ruler} iconColor="text-violet-600" />
+        <StatCard
+          title="Last Import"
+          value={project.lastImport ? `${project.lastImport.importedRows} rows` : "—"}
+          subtitle={project.lastImport ? `${project.lastImport.importName || project.lastImport.filename} \u00b7 ${new Date(project.lastImport.uploadedAt).toLocaleDateString()}` : "No imports yet"}
+          icon={Upload}
+          iconColor="text-emerald-600"
+        />
+        <StatCard
+          title="Last Updated"
+          value={project.lastUpdatedSite ? new Date(project.lastUpdatedSite).toLocaleDateString() : "—"}
+          subtitle="Most recent site change"
+          icon={Calendar}
+          iconColor="text-amber-600"
+        />
       </div>
 
-      <div className="flex flex-wrap gap-3">
-        {hasSitesRead && (
-          <Button asChild>
-            <Link to={`/projects/${projectId}/sites`}>View Sites</Link>
-          </Button>
-        )}
-        {hasSitesRead && (
-          <Button variant="outline" asChild>
-            <Link to={`/projects/${projectId}/map`}>Map View</Link>
-          </Button>
-        )}
-        {hasLeasesRead && (
-          <Button variant="outline" asChild>
-            <Link to={`/projects/${projectId}/leases`}>Leases</Link>
-          </Button>
-        )}
-        {hasDocsRead && (
-          <Button variant="outline" asChild>
-            <Link to={`/projects/${projectId}/documents`}>Documents</Link>
-          </Button>
-        )}
-        {hasInsights && (
-          <Button variant="outline" asChild>
-            <Link to={`/projects/${projectId}/insights`}>Insights</Link>
-          </Button>
-        )}
-        {hasLeasesRead && (
-          <Button variant="outline" asChild>
-            <Link to={`/projects/${projectId}/renewals`}>Renewals</Link>
-          </Button>
-        )}
-        {hasImport && (
-          <Button variant="outline" asChild>
-            <Link to={`/projects/${projectId}/import`}>Import Sites</Link>
-          </Button>
-        )}
+      {/* Quick links */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        {quickLinks.map((link) => (
+          <Link
+            key={link.to}
+            to={link.to}
+            className="flex flex-col items-center gap-2 rounded-lg border bg-card p-4 text-center hover:bg-accent/50 hover:border-primary/20 transition-all duration-150 group"
+          >
+            <link.icon className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+            <span className="text-xs font-medium">{link.label}</span>
+          </Link>
+        ))}
       </div>
 
       {/* Charts */}
@@ -205,7 +166,10 @@ export function ProjectDashboard() {
           {stateData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Sites by State (Top 10)</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <MapPin className="h-4 w-4 text-primary" />
+                  Sites by State (Top 10)
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -213,7 +177,7 @@ export function ProjectDashboard() {
                     <XAxis type="number" />
                     <YAxis type="category" dataKey="state" width={40} tick={{ fontSize: 12 }} />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#2563eb" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="count" fill="#3b82f6" radius={[0, 6, 6, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -223,7 +187,10 @@ export function ProjectDashboard() {
           {structureData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Sites by Structure Type</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  Sites by Structure Type
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -252,7 +219,10 @@ export function ProjectDashboard() {
           {providerData.length > 0 && (
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle className="text-base">Sites by Provider (Top 10)</CardTitle>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  Sites by Provider (Top 10)
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
@@ -260,7 +230,7 @@ export function ProjectDashboard() {
                     <XAxis dataKey="provider" angle={-45} textAnchor="end" tick={{ fontSize: 11 }} interval={0} />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="count" fill="#7c3aed" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -269,16 +239,32 @@ export function ProjectDashboard() {
         </div>
       )}
 
+      {/* Project details */}
       <Card>
         <CardHeader>
-          <CardTitle>Project Details</CardTitle>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Building2 className="h-4 w-4 text-primary" />
+            Project Details
+          </CardTitle>
           <CardDescription>Metadata and configuration</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div><span className="text-muted-foreground text-sm">Company</span><br /><span className="font-medium">{project.companyName || "—"}</span></div>
-          <div><span className="text-muted-foreground text-sm">Status</span><br /><span className="font-medium">{project.isArchived ? "Archived" : "Active"}</span></div>
-          <div><span className="text-muted-foreground text-sm">Created</span><br /><span className="font-medium">{new Date(project.createdAt).toLocaleString()}</span></div>
-          <div><span className="text-muted-foreground text-sm">Updated</span><br /><span className="font-medium">{new Date(project.updatedAt).toLocaleString()}</span></div>
+          <div className="rounded-lg bg-accent/30 p-3">
+            <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Company</span>
+            <p className="font-medium mt-1">{project.companyName || "—"}</p>
+          </div>
+          <div className="rounded-lg bg-accent/30 p-3">
+            <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Status</span>
+            <p className="font-medium mt-1">{project.isArchived ? "Archived" : "Active"}</p>
+          </div>
+          <div className="rounded-lg bg-accent/30 p-3">
+            <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Created</span>
+            <p className="font-medium mt-1">{new Date(project.createdAt).toLocaleString()}</p>
+          </div>
+          <div className="rounded-lg bg-accent/30 p-3">
+            <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Updated</span>
+            <p className="font-medium mt-1">{new Date(project.updatedAt).toLocaleString()}</p>
+          </div>
         </CardContent>
       </Card>
     </div>

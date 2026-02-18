@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth";
+import { toast } from "sonner";
 
 interface Lease {
   _id: string;
@@ -69,7 +70,8 @@ export function ProjectLeases() {
 
   const deleteMut = useMutation({
     mutationFn: (leaseId: string) => api(`/api/projects/${projectId}/leases/${leaseId}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId, "leases"] }),
+    onSuccess: () => { toast.success("Lease deleted"); queryClient.invalidateQueries({ queryKey: ["projects", projectId, "leases"] }); },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const items = data?.items ?? [];

@@ -25,6 +25,7 @@ import { ProjectInsights } from "@/pages/ProjectInsights";
 import { Profile } from "@/pages/Profile";
 import { ProjectRenewals } from "@/pages/ProjectRenewals";
 import { PERMISSIONS } from "@/lib/permissions";
+import { Toaster } from "sonner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -66,6 +67,7 @@ function AuthLoader({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <Toaster position="top-right" richColors closeButton />
       <BrowserRouter>
         <AuthLoader>
           <Routes>

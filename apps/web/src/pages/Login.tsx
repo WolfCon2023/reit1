@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Label } from "@/components/ui/Label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
+import { LogIn, AlertCircle } from "lucide-react";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -26,7 +27,6 @@ export function Login() {
         "/api/auth/login",
         { method: "POST", body: { email, password } }
       );
-      // Store token immediately so the next api() call includes it
       localStorage.setItem("accessToken", newToken);
       const me = await api<{
         id: string;
@@ -51,20 +51,29 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-md shadow-lg">
-        <CardHeader className="items-center text-center">
-          <img src="/logo.png" alt="REIT Sites" className="h-28 w-auto mb-2" />
-          <CardTitle className="text-2xl">Sign in</CardTitle>
-          <CardDescription>REIT Site Data Administration</CardDescription>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-slate-950 dark:via-blue-950/50 dark:to-indigo-950/30" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-to-b from-primary/5 to-transparent rounded-full blur-3xl" />
+
+      <Card className="w-full max-w-md shadow-lg relative z-10 border-0 shadow-xl">
+        <CardHeader className="items-center text-center pb-2">
+          <div className="mb-4 p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10">
+            <img src="/logo.png" alt="REIT Sites" className="h-24 w-auto" />
+          </div>
+          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+          <CardDescription className="text-base">Sign in to REIT Site Administration</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="pt-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             {error && (
-              <div className="rounded-md bg-destructive/10 text-destructive text-sm p-3">{error}</div>
+              <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive text-sm p-3">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {error}
+              </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Email address</Label>
               <Input
                 id="email"
                 type="email"
@@ -73,6 +82,7 @@ export function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
+                className="h-11"
               />
             </div>
             <div className="space-y-2">
@@ -80,14 +90,26 @@ export function Login() {
               <Input
                 id="password"
                 type="password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                className="h-11"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in…" : "Sign in"}
+            <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Signing in...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <LogIn className="h-4 w-4" />
+                  Sign in
+                </span>
+              )}
             </Button>
           </form>
         </CardContent>

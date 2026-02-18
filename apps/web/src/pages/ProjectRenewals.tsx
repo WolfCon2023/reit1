@@ -5,8 +5,11 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth";
+import { toast } from "sonner";
+import { RotateCcw, Plus, Check, X as XIcon } from "lucide-react";
 
 interface Renewal {
   _id: string;
@@ -67,6 +70,7 @@ export function ProjectRenewals() {
     mutationFn: (body: Record<string, unknown>) =>
       api(`/api/projects/${projectId}/renewals`, { method: "POST", body }),
     onSuccess: () => {
+      toast.success("Renewal request submitted");
       queryClient.invalidateQueries({ queryKey: ["projects", projectId, "renewals"] });
       setShowForm(false);
       setSelectedLease("");
@@ -74,18 +78,19 @@ export function ProjectRenewals() {
       setProposedRent("");
       setRenewalNotes("");
     },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const approveMut = useMutation({
     mutationFn: ({ id, reviewNotes }: { id: string; reviewNotes?: string }) =>
       api(`/api/projects/${projectId}/renewals/${id}/approve`, { method: "POST", body: { reviewNotes } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId, "renewals"] }),
+    onSuccess: () => { toast.success("Renewal approved"); queryClient.invalidateQueries({ queryKey: ["projects", projectId, "renewals"] }); },
   });
 
   const rejectMut = useMutation({
     mutationFn: ({ id, reviewNotes }: { id: string; reviewNotes?: string }) =>
       api(`/api/projects/${projectId}/renewals/${id}/reject`, { method: "POST", body: { reviewNotes } }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId, "renewals"] }),
+    onSuccess: () => { toast.success("Renewal rejected"); queryClient.invalidateQueries({ queryKey: ["projects", projectId, "renewals"] }); },
   });
 
   const items = data?.items ?? [];
@@ -103,10 +108,13 @@ export function ProjectRenewals() {
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Lease Renewals</h1>
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+          <RotateCcw className="h-7 w-7 text-primary" />
+          Lease Renewals
+        </h1>
         {hasWrite && (
-          <Button onClick={() => setShowForm(!showForm)}>
-            {showForm ? "Cancel" : "Request Renewal"}
+          <Button onClick={() => setShowForm(!showForm)} className="gap-2">
+            {showForm ? <><XIcon className="h-4 w-4" /> Cancel</> : <><Plus className="h-4 w-4" /> Request Renewal</>}
           </Button>
         )}
       </div>
@@ -210,30 +218,30 @@ export function ProjectRenewals() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        r.status === "pending" ? "bg-yellow-100 text-yellow-800" :
-                        r.status === "approved" ? "bg-green-100 text-green-800" :
-                        "bg-red-100 text-red-800"
-                      }`}>
+                      <Badge variant={
+                        r.status === "pending" ? "warning" :
+                        r.status === "approved" ? "success" : "destructive"
+                      }>
                         {r.status}
-                      </span>
+                      </Badge>
                       {r.status === "pending" && hasWrite && (
                         <>
                           <Button
                             size="sm"
                             onClick={() => approveMut.mutate({ id: r._id })}
                             disabled={approveMut.isPending}
+                            className="gap-1.5"
                           >
-                            Approve
+                            <Check className="h-3.5 w-3.5" /> Approve
                           </Button>
                           <Button
                             size="sm"
                             variant="outline"
-                            className="text-destructive"
+                            className="text-destructive gap-1.5"
                             onClick={() => rejectMut.mutate({ id: r._id })}
                             disabled={rejectMut.isPending}
                           >
-                            Reject
+                            <XIcon className="h-3.5 w-3.5" /> Reject
                           </Button>
                         </>
                       )}

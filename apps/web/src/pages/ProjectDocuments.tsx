@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PERMISSIONS } from "@/lib/permissions";
 import { useAuthStore } from "@/store/auth";
+import { toast } from "sonner";
 
 interface Doc {
   _id: string;
@@ -70,6 +71,7 @@ export function ProjectDocuments() {
       return res.json();
     },
     onSuccess: () => {
+      toast.success("Document uploaded");
       queryClient.invalidateQueries({ queryKey: ["projects", projectId, "documents"] });
       setShowUpload(false);
       setTitle("");
@@ -80,7 +82,8 @@ export function ProjectDocuments() {
 
   const deleteMut = useMutation({
     mutationFn: (docId: string) => api(`/api/projects/${projectId}/documents/${docId}`, { method: "DELETE" }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId, "documents"] }),
+    onSuccess: () => { toast.success("Document deleted"); queryClient.invalidateQueries({ queryKey: ["projects", projectId, "documents"] }); },
+    onError: (err: Error) => toast.error(err.message),
   });
 
   const handleUpload = (e: React.FormEvent) => {
