@@ -6,23 +6,29 @@ import { User } from "../models/index.js";
 import { requireAuth } from "../middleware/auth.js";
 import {
   loginSchema,
-  verifyOtpSchema,
+  mfaLoginSchema,
   forgotPasswordSchema,
   resetPasswordWithCodeSchema,
 } from "@reit1/shared";
 import { config } from "../config.js";
 import { logAudit } from "../lib/audit.js";
-import { sendOtpEmail, sendResetCodeEmail } from "../services/email.js";
+import { sendResetCodeEmail } from "../services/email.js";
+import * as mfaService from "../services/mfa.js";
 import type { JwtPayload, RequestUser } from "@reit1/shared";
 
 const router = Router();
 
-const OTP_EXPIRY_MS = 5 * 60 * 1000;
 const RESET_EXPIRY_MS = 15 * 60 * 1000;
-const MAX_OTP_ATTEMPTS = 5;
 
 function generateCode(): string {
   return crypto.randomInt(100_000, 999_999).toString();
+}
+
+function issueAccessToken(user: { _id: unknown; email: string }) {
+  const payload: JwtPayload = { userId: String(user._id), email: user.email };
+  return jwt.sign(payload as object, config.jwtSecret as jwt.Secret, {
+    expiresIn: config.jwtExpiresIn,
+  } as jwt.SignOptions);
 }
 
 // ── POST /login ─────────────────────────────────────────────────────
@@ -44,42 +50,53 @@ router.post("/login", async (req, res) => {
     return;
   }
 
-  const code = generateCode();
-  user.otpHash = await bcrypt.hash(code, 10);
-  user.otpExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
-  user.otpAttempts = 0;
+  if (user.mfaEnabled) {
+    const mfaPayload = { userId: user._id.toString(), purpose: "mfa_verification" };
+    const mfaToken = jwt.sign(mfaPayload as object, config.jwtSecret as jwt.Secret, {
+      expiresIn: "5m",
+    } as jwt.SignOptions);
+    res.json({
+      requiresMfa: true,
+      mfaToken,
+      message: "Please enter your two-factor authentication code",
+    });
+    return;
+  }
+
+  user.lastLoginAt = new Date();
   await user.save();
+  const token = issueAccessToken(user);
 
-  sendOtpEmail(user.email, user.name, code).catch((err) =>
-    console.error("Failed to send OTP email:", err)
-  );
+  const reqUser: RequestUser = { userId: user._id.toString(), email: user.email, permissions: [] };
+  await logAudit(reqUser, "auth.login", "User", user._id.toString(), { email: user.email });
 
-  const otpPayload = { userId: user._id.toString(), purpose: "otp" };
-  const otpToken = jwt.sign(otpPayload as object, config.jwtSecret as jwt.Secret, {
-    expiresIn: "5m",
-  } as jwt.SignOptions);
-
-  res.json({ requiresOtp: true, otpToken });
+  res.json({ token, user: { id: user._id, email: user.email, name: user.name } });
 });
 
-// ── POST /verify-otp ────────────────────────────────────────────────
-router.post("/verify-otp", async (req, res) => {
-  const parsed = verifyOtpSchema.safeParse(req.body);
+// ── POST /login/mfa ─────────────────────────────────────────────────
+router.post("/login/mfa", async (req, res) => {
+  const parsed = mfaLoginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid input", details: parsed.error.flatten() });
     return;
   }
-  const { otpToken, code } = parsed.data;
+  const { mfaToken, code } = parsed.data;
 
   let decoded: { userId: string; purpose?: string };
   try {
-    decoded = jwt.verify(otpToken, config.jwtSecret) as { userId: string; purpose?: string };
+    decoded = jwt.verify(mfaToken, config.jwtSecret) as { userId: string; purpose?: string };
   } catch {
-    res.status(401).json({ error: "OTP session expired. Please log in again." });
+    res.status(401).json({ error: "MFA session expired. Please login again." });
     return;
   }
-  if (decoded.purpose !== "otp") {
+  if (decoded.purpose !== "mfa_verification") {
     res.status(401).json({ error: "Invalid token" });
+    return;
+  }
+
+  const result = await mfaService.verifyMfaLogin(decoded.userId, code);
+  if (!result.success) {
+    res.status(401).json({ error: result.message });
     return;
   }
 
@@ -88,53 +105,16 @@ router.post("/verify-otp", async (req, res) => {
     res.status(401).json({ error: "User not found or disabled" });
     return;
   }
-  if (!user.otpHash || !user.otpExpiresAt) {
-    res.status(401).json({ error: "No pending OTP. Please log in again." });
-    return;
-  }
-  if (user.otpExpiresAt < new Date()) {
-    user.otpHash = undefined;
-    user.otpExpiresAt = undefined;
-    user.otpAttempts = 0;
-    await user.save();
-    res.status(401).json({ error: "OTP has expired. Please log in again." });
-    return;
-  }
-  if ((user.otpAttempts ?? 0) >= MAX_OTP_ATTEMPTS) {
-    user.otpHash = undefined;
-    user.otpExpiresAt = undefined;
-    user.otpAttempts = 0;
-    await user.save();
-    res.status(429).json({ error: "Too many attempts. Please log in again." });
-    return;
-  }
 
-  const codeMatch = await bcrypt.compare(code, user.otpHash);
-  if (!codeMatch) {
-    user.otpAttempts = (user.otpAttempts ?? 0) + 1;
-    await user.save();
-    const remaining = MAX_OTP_ATTEMPTS - (user.otpAttempts ?? 0);
-    res.status(401).json({ error: `Invalid code. ${remaining} attempt(s) remaining.` });
-    return;
-  }
-
-  user.otpHash = undefined;
-  user.otpExpiresAt = undefined;
-  user.otpAttempts = 0;
   user.lastLoginAt = new Date();
   await user.save();
+  const token = issueAccessToken(user);
 
-  const payload: JwtPayload = { userId: user._id.toString(), email: user.email };
-  const token = jwt.sign(payload as object, config.jwtSecret as jwt.Secret, {
-    expiresIn: config.jwtExpiresIn,
-  } as jwt.SignOptions);
-
-  const reqUser: RequestUser = {
-    userId: user._id.toString(),
+  const reqUser: RequestUser = { userId: user._id.toString(), email: user.email, permissions: [] };
+  await logAudit(reqUser, "auth.login", "User", user._id.toString(), {
     email: user.email,
-    permissions: [],
-  };
-  await logAudit(reqUser, "auth.login", "User", user._id.toString(), { email: user.email });
+    mfa: true,
+  });
 
   res.json({ token, user: { id: user._id, email: user.email, name: user.name } });
 });
@@ -146,7 +126,6 @@ router.post("/forgot-password", async (req, res) => {
     res.status(400).json({ error: "Invalid input" });
     return;
   }
-  // Always return 200 to prevent email enumeration
   const user = await User.findOne({ email: parsed.data.email.toLowerCase(), isActive: true });
   if (user) {
     const code = generateCode();
@@ -180,7 +159,6 @@ router.post("/reset-password", async (req, res) => {
     res.status(400).json({ error: "Reset code has expired. Please request a new one." });
     return;
   }
-
   const codeMatch = await bcrypt.compare(code, user.resetCode);
   if (!codeMatch) {
     res.status(400).json({ error: "Invalid reset code." });
@@ -192,22 +170,17 @@ router.post("/reset-password", async (req, res) => {
   user.resetExpiresAt = undefined;
   await user.save();
 
-  const reqUser: RequestUser = {
-    userId: user._id.toString(),
-    email: user.email,
-    permissions: [],
-  };
+  const reqUser: RequestUser = { userId: user._id.toString(), email: user.email, permissions: [] };
   await logAudit(reqUser, "auth.resetPassword", "User", user._id.toString(), {
     method: "self-service",
   });
-
   res.json({ ok: true });
 });
 
 // ── GET /me ─────────────────────────────────────────────────────────
 router.get("/me", requireAuth, async (req, res) => {
   const user = await User.findById(req.user!.userId)
-    .select("email name roles isActive lastLoginAt")
+    .select("email name roles isActive lastLoginAt mfaEnabled")
     .populate("roles", "name permissions");
   if (!user) {
     res.status(404).json({ error: "User not found" });
@@ -222,6 +195,7 @@ router.get("/me", requireAuth, async (req, res) => {
     name: user.name,
     isActive: user.isActive,
     lastLoginAt: user.lastLoginAt,
+    mfaEnabled: !!user.mfaEnabled,
     permissions,
     roles: roles.map((r) => ({ id: r._id, name: r.name })),
   });

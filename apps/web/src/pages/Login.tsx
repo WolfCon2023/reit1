@@ -14,49 +14,70 @@ import {
   ArrowLeft,
   KeyRound,
   Mail,
-  RefreshCw,
 } from "lucide-react";
 
-type Step = "credentials" | "otp" | "forgot" | "reset";
+type Step = "credentials" | "mfa" | "forgot" | "reset";
 
 export function Login() {
   const [step, setStep] = useState<Step>("credentials");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [otpToken, setOtpToken] = useState("");
-  const [otpCode, setOtpCode] = useState("");
+  const [mfaToken, setMfaToken] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
   const [resetEmail, setResetEmail] = useState("");
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resending, setResending] = useState(false);
 
   const { token, setAuth } = useAuthStore();
   const navigate = useNavigate();
-  const otpInputRef = useRef<HTMLInputElement>(null);
+  const mfaInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (step === "otp") otpInputRef.current?.focus();
+    if (step === "mfa") mfaInputRef.current?.focus();
   }, [step]);
 
   if (token) return <Navigate to="/" replace />;
+
+  const completeLogin = async (accessToken: string) => {
+    localStorage.setItem("accessToken", accessToken);
+    const me = await api<{
+      id: string;
+      email: string;
+      name: string;
+      permissions: string[];
+      roles: { id: string; name: string }[];
+    }>("/api/auth/me");
+    setAuth(accessToken, {
+      id: me.id,
+      email: me.email,
+      name: me.name,
+      permissions: me.permissions,
+      roles: me.roles,
+    });
+    navigate("/", { replace: true });
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const res = await api<{ requiresOtp?: boolean; otpToken?: string }>(
-        "/api/auth/login",
-        { method: "POST", body: { email, password } }
-      );
-      if (res.requiresOtp && res.otpToken) {
-        setOtpToken(res.otpToken);
-        setOtpCode("");
-        setStep("otp");
-        toast.success("Verification code sent to your email.");
+      const res = await api<{
+        requiresMfa?: boolean;
+        mfaToken?: string;
+        token?: string;
+        user?: { id: string; email: string; name: string };
+      }>("/api/auth/login", { method: "POST", body: { email, password } });
+
+      if (res.requiresMfa && res.mfaToken) {
+        setMfaToken(res.mfaToken);
+        setMfaCode("");
+        setStep("mfa");
+      } else if (res.token) {
+        await completeLogin(res.token);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
@@ -65,56 +86,20 @@ export function Login() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleMfaVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const { token: newToken } = await api<{
-        token: string;
-        user: { id: string; email: string; name: string };
-      }>("/api/auth/verify-otp", { method: "POST", body: { otpToken, code: otpCode } });
-
-      localStorage.setItem("accessToken", newToken);
-      const me = await api<{
-        id: string;
-        email: string;
-        name: string;
-        permissions: string[];
-        roles: { id: string; name: string }[];
-      }>("/api/auth/me");
-      setAuth(newToken, {
-        id: me.id,
-        email: me.email,
-        name: me.name,
-        permissions: me.permissions,
-        roles: me.roles,
+      const res = await api<{ token: string }>("/api/auth/login/mfa", {
+        method: "POST",
+        body: { mfaToken, code: mfaCode },
       });
-      navigate("/", { replace: true });
+      await completeLogin(res.token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Verification failed");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    setResending(true);
-    setError("");
-    try {
-      const res = await api<{ requiresOtp?: boolean; otpToken?: string }>(
-        "/api/auth/login",
-        { method: "POST", body: { email, password } }
-      );
-      if (res.requiresOtp && res.otpToken) {
-        setOtpToken(res.otpToken);
-        setOtpCode("");
-        toast.success("New verification code sent.");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to resend code");
-    } finally {
-      setResending(false);
     }
   };
 
@@ -166,7 +151,8 @@ export function Login() {
   const backToLogin = () => {
     setStep("credentials");
     setError("");
-    setOtpCode("");
+    setMfaCode("");
+    setMfaToken("");
     setResetCode("");
     setNewPassword("");
     setConfirmPassword("");
@@ -224,11 +210,7 @@ export function Login() {
                     className="h-11"
                   />
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full h-11 text-base font-medium"
-                  disabled={loading}
-                >
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -244,11 +226,7 @@ export function Login() {
                 <div className="text-center">
                   <button
                     type="button"
-                    onClick={() => {
-                      setStep("forgot");
-                      setError("");
-                      setResetEmail(email);
-                    }}
+                    onClick={() => { setStep("forgot"); setError(""); setResetEmail(email); }}
                     className="text-sm text-primary hover:underline"
                   >
                     Forgot Password?
@@ -259,21 +237,20 @@ export function Login() {
           </>
         )}
 
-        {/* ── OTP Step ── */}
-        {step === "otp" && (
+        {/* ── MFA Step ── */}
+        {step === "mfa" && (
           <>
             <CardHeader className="items-center text-center pb-2">
               <div className="mb-4 p-3 rounded-2xl bg-gradient-to-br from-primary/5 to-primary/10">
                 <ShieldCheck className="h-12 w-12 text-primary" />
               </div>
-              <CardTitle className="text-2xl font-bold">Verification code</CardTitle>
+              <CardTitle className="text-2xl font-bold">Two-Factor Authentication</CardTitle>
               <CardDescription className="text-base">
-                Enter the 6-digit code sent to{" "}
-                <span className="font-medium text-foreground">{email}</span>
+                Enter the 6-digit code from your authenticator app
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4">
-              <form onSubmit={handleVerifyOtp} className="space-y-5">
+              <form onSubmit={handleMfaVerify} className="space-y-5">
                 {error && (
                   <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive text-sm p-3">
                     <AlertCircle className="h-4 w-4 shrink-0" />
@@ -281,16 +258,16 @@ export function Login() {
                   </div>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="otp-code">Verification code</Label>
+                  <Label htmlFor="mfa-code">Authentication code</Label>
                   <Input
-                    ref={otpInputRef}
-                    id="otp-code"
+                    ref={mfaInputRef}
+                    id="mfa-code"
                     type="text"
                     inputMode="numeric"
                     maxLength={6}
                     placeholder="000000"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     required
                     autoComplete="one-time-code"
                     className="h-12 text-center text-2xl tracking-[0.3em] font-mono"
@@ -299,7 +276,7 @@ export function Login() {
                 <Button
                   type="submit"
                   className="w-full h-11 text-base font-medium"
-                  disabled={loading || otpCode.length !== 6}
+                  disabled={loading || mfaCode.length !== 6}
                 >
                   {loading ? (
                     <span className="flex items-center gap-2">
@@ -313,23 +290,14 @@ export function Login() {
                     </span>
                   )}
                 </Button>
-                <div className="flex items-center justify-between text-sm">
+                <div className="text-center">
                   <button
                     type="button"
                     onClick={backToLogin}
-                    className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors mx-auto"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                     Back to sign in
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    disabled={resending}
-                    className="flex items-center gap-1 text-primary hover:underline disabled:opacity-50"
-                  >
-                    <RefreshCw className={`h-3.5 w-3.5 ${resending ? "animate-spin" : ""}`} />
-                    Resend code
                   </button>
                 </div>
               </form>
@@ -370,11 +338,7 @@ export function Login() {
                     className="h-11"
                   />
                 </div>
-                <Button
-                  type="submit"
-                  className="w-full h-11 text-base font-medium"
-                  disabled={loading}
-                >
+                <Button type="submit" className="w-full h-11 text-base font-medium" disabled={loading}>
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -411,8 +375,7 @@ export function Login() {
               </div>
               <CardTitle className="text-2xl font-bold">Reset password</CardTitle>
               <CardDescription className="text-base">
-                Enter the code sent to{" "}
-                <span className="font-medium text-foreground">{resetEmail}</span>
+                Enter the code sent to <span className="font-medium text-foreground">{resetEmail}</span>
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-4">

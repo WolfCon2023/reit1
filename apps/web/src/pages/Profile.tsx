@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { MfaSetup } from "@/components/MfaSetup";
 import { useAuthStore } from "@/store/auth";
 import { toast } from "sonner";
 import { UserCircle, Key } from "lucide-react";
@@ -14,6 +15,22 @@ interface ProfileData {
   name: string;
   lastLoginAt?: string;
   createdAt: string;
+}
+
+function MfaSection() {
+  const { data, refetch } = useQuery({
+    queryKey: ["mfa-status"],
+    queryFn: () => api<{ success: boolean; data: { enabled: boolean; enforced: boolean } }>("/api/mfa/status"),
+  });
+  const status = data?.data;
+  if (!status) return null;
+  return (
+    <MfaSetup
+      mfaEnabled={status.enabled}
+      mfaEnforced={status.enforced}
+      onStatusChange={() => refetch()}
+    />
+  );
 }
 
 export function Profile() {
@@ -159,6 +176,8 @@ export function Profile() {
           </form>
         </CardContent>
       </Card>
+
+      <MfaSection />
     </div>
   );
 }

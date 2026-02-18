@@ -27,6 +27,7 @@ import profileRoutes from "./routes/profile.js";
 import projectReportsRoutes from "./routes/projectReports.js";
 import projectPhotosRoutes from "./routes/projectPhotos.js";
 import projectRenewalsRoutes from "./routes/projectRenewals.js";
+import mfaRoutes from "./routes/mfa.js";
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use("/api/metrics", globalMetricsRoutes);
 app.use("/api/features", featuresRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/profile", profileRoutes);
+app.use("/api/mfa", mfaRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

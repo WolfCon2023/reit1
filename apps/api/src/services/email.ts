@@ -89,30 +89,6 @@ export async function sendPasswordResetNotification(toEmail: string, resetByAdmi
   });
 }
 
-export async function sendOtpEmail(toEmail: string, name: string, code: string): Promise<boolean> {
-  return sendEmail({
-    to: toEmail,
-    subject: "REIT — Your login verification code",
-    text: [
-      `Hello ${name},`,
-      "",
-      `Your login verification code is: ${code}`,
-      "",
-      "This code expires in 5 minutes. If you did not attempt to log in, you can safely ignore this email.",
-      "",
-      "— REIT Site Administration",
-    ].join("\n"),
-    html: `
-      <p>Hello ${name},</p>
-      <p>Your login verification code is:</p>
-      <p style="font-size:28px;font-weight:bold;letter-spacing:6px;margin:16px 0;color:#3b82f6">${code}</p>
-      <p>This code expires in <strong>5 minutes</strong>.</p>
-      <p style="color:#888;font-size:13px">If you did not attempt to log in, you can safely ignore this email.</p>
-      <hr/>
-      <p style="color:#888;font-size:12px">REIT Site Administration</p>
-    `,
-  });
-}
 
 export async function sendResetCodeEmail(toEmail: string, name: string, code: string): Promise<boolean> {
   return sendEmail({
