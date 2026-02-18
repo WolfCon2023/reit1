@@ -2,6 +2,11 @@ const API_URL = (import.meta as { env?: { VITE_API_URL?: string } }).env?.VITE_A
 
 type ApiOptions = Omit<RequestInit, "body"> & { body?: unknown };
 
+function clearAuth() {
+  localStorage.removeItem("accessToken");
+  localStorage.removeItem("reit-auth");
+}
+
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const token = localStorage.getItem("accessToken");
   const headers: Record<string, string> = {
@@ -18,8 +23,7 @@ export async function api<T>(path: string, options: ApiOptions = {}): Promise<T>
     body: serializedBody,
   });
   if (res.status === 401) {
-    localStorage.removeItem("accessToken");
-    window.location.href = "/login";
+    clearAuth();
     throw new Error("Unauthorized");
   }
   if (!res.ok) {
@@ -37,8 +41,7 @@ export async function apiBlob(path: string): Promise<Blob> {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
   if (res.status === 401) {
-    localStorage.removeItem("accessToken");
-    window.location.href = "/login";
+    clearAuth();
     throw new Error("Unauthorized");
   }
   if (!res.ok) throw new Error(await res.text());
