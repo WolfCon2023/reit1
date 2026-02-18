@@ -11,7 +11,7 @@ import { useAuthStore } from "@/store/auth";
 import { toast } from "sonner";
 import {
   UserPlus, Pencil, KeyRound, ShieldCheck, ShieldOff,
-  Save, X, Users2, Smartphone,
+  Save, X, Users2,
 } from "lucide-react";
 
 interface UserRow {
@@ -259,11 +259,33 @@ export function Users() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    {u.mfaEnabled ? (
-                      <Badge variant="success">Enabled</Badge>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Off</span>
-                    )}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={u.mfaEnabled}
+                      disabled={!hasManage || !u.mfaEnabled || disableMfaMutation.isPending}
+                      title={
+                        !u.mfaEnabled
+                          ? "User has not enrolled in MFA"
+                          : "Click to disable MFA for this user"
+                      }
+                      onClick={() => {
+                        if (u.mfaEnabled && confirm(`Disable MFA for ${u.email}?`)) {
+                          disableMfaMutation.mutate(u._id);
+                        }
+                      }}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                        u.mfaEnabled
+                          ? "bg-green-500"
+                          : "bg-muted"
+                      } ${!hasManage || !u.mfaEnabled ? "opacity-60 cursor-not-allowed" : ""}`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm ring-0 transition-transform ${
+                          u.mfaEnabled ? "translate-x-5" : "translate-x-0.5"
+                        }`}
+                      />
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-sm text-muted-foreground">
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : "Never"}
@@ -311,19 +333,6 @@ export function Users() {
                             >
                               <KeyRound className="h-3.5 w-3.5" />
                             </Button>
-                            {u.mfaEnabled && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  if (confirm(`Disable MFA for ${u.email}?`)) disableMfaMutation.mutate(u._id);
-                                }}
-                                className="gap-1 h-8 text-warning"
-                                title="Disable MFA"
-                              >
-                                <Smartphone className="h-3.5 w-3.5" />
-                              </Button>
-                            )}
                           </>
                         )}
                       </div>
