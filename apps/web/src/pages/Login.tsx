@@ -26,6 +26,8 @@ export function Login() {
         "/api/auth/login",
         { method: "POST", body: { email, password } }
       );
+      // Store token immediately so the next api() call includes it
+      localStorage.setItem("accessToken", newToken);
       const me = await api<{
         id: string;
         email: string;
