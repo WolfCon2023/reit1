@@ -54,7 +54,7 @@ export function Login() {
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="items-center text-center">
-          <img src="/logo.png" alt="REIT Sites" className="h-16 w-auto mb-2" />
+          <img src="/logo.png" alt="REIT Sites" className="h-28 w-auto mb-2" />
           <CardTitle className="text-2xl">Sign in</CardTitle>
           <CardDescription>REIT Site Data Administration</CardDescription>
         </CardHeader>
