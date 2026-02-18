@@ -25,7 +25,8 @@ export function Layout() {
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
         <div className="container flex h-14 items-center justify-between px-4">
           <nav className="flex items-center gap-6">
-            <Link to="/" className="font-semibold text-lg text-primary">
+            <Link to="/" className="flex items-center gap-2 font-semibold text-lg text-primary">
+              <img src="/logo.png" alt="REIT Sites" className="h-8 w-auto" />
               REIT Sites
             </Link>
             {NAV.filter((n) => !n.permission || hasPermission(n.permission)).map((item) => (
