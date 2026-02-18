@@ -1,9 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth";
 import { useFeaturesStore } from "@/store/features";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
 import { api } from "@/lib/api";
+import { toast, Toaster } from "sonner";
 import { Layout } from "@/components/Layout";
 import { Login } from "@/pages/Login";
 import { Dashboard } from "@/pages/Dashboard";
@@ -30,7 +32,7 @@ import { LegalTerms } from "@/pages/legal/Terms";
 import { LegalPrivacy } from "@/pages/legal/Privacy";
 import { PublicShell } from "@/components/PublicShell";
 import { PERMISSIONS } from "@/lib/permissions";
-import { Toaster } from "sonner";
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,10 +52,21 @@ function RequirePermission({ permission, children }: { permission: string; child
   return <>{children}</>;
 }
 
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+
 function AuthLoader({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token);
   const setUser = useAuthStore((s) => s.setUser);
+  const logout = useAuthStore((s) => s.logout);
   const loadFlags = useFeaturesStore((s) => s.loadFlags);
+
+  const handleIdle = useCallback(() => {
+    if (!useAuthStore.getState().token) return;
+    logout();
+    toast.info("You have been logged out due to inactivity.");
+  }, [logout]);
+
+  useIdleTimeout(handleIdle, IDLE_TIMEOUT_MS);
 
   useEffect(() => {
     loadFlags();
