@@ -18,6 +18,9 @@
     "seed": "npm run seed -w apps/api",
     "lint": "npm run lint -w packages/shared && npm run lint -w apps/api && npm run lint -w apps/web"
   },
+  "dependencies": {
+    "react-is": "^18.3.1"
+  },
   "engines": {
     "node": ">=18"
   }
