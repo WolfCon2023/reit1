@@ -9,6 +9,11 @@ const userSchema = new mongoose.Schema<UserDocument>(
     roles: [{ type: mongoose.Schema.Types.ObjectId, ref: "Role" }],
     isActive: { type: Boolean, default: true },
     lastLoginAt: Date,
+    otpHash: String,
+    otpExpiresAt: Date,
+    otpAttempts: { type: Number, default: 0 },
+    resetCode: String,
+    resetExpiresAt: Date,
   },
   { timestamps: true }
 );

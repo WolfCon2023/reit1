@@ -58,6 +58,11 @@ export interface UserDocument {
   roles: string[];
   isActive: boolean;
   lastLoginAt?: Date;
+  otpHash?: string;
+  otpExpiresAt?: Date;
+  otpAttempts?: number;
+  resetCode?: string;
+  resetExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
