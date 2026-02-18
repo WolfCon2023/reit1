@@ -39,7 +39,7 @@ router.get("/", requireAuth, async (req, res) => {
   const projectId = req.query.projectId ? String(req.query.projectId) : undefined;
 
   const filter: Record<string, unknown> = {
-    actorId: req.user!._id.toString(),
+    actorUserId: req.user!.userId,
   };
   if (projectId) {
     filter["metadata.projectId"] = projectId;
