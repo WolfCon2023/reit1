@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { Site, ImportBatch } from "../models/index.js";
 import { requireAuth, requirePermission } from "../middleware/auth.js";
 import { PERMISSIONS } from "@reit1/shared";
@@ -7,7 +8,8 @@ const router = Router({ mergeParams: true });
 
 router.get("/", requireAuth, requirePermission(PERMISSIONS.PROJECTS_READ), async (req, res) => {
   const { projectId } = req.params;
-  const pid = projectId;
+  const pid = new mongoose.Types.ObjectId(projectId);
+  const baseMatch = { projectId: pid, isDeleted: { $ne: true } };
 
   const [
     sitesByState,
@@ -18,25 +20,25 @@ router.get("/", requireAuth, requirePermission(PERMISSIONS.PROJECTS_READ), async
     lastUpdatedSite,
   ] = await Promise.all([
     Site.aggregate([
-      { $match: { projectId: { $toObjectId: pid } as any, isDeleted: { $ne: true } } },
+      { $match: baseMatch },
       { $group: { _id: "$stateValue", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
+      { $sort: { count: -1 as const } },
     ]),
     Site.aggregate([
-      { $match: { projectId: { $toObjectId: pid } as any, isDeleted: { $ne: true } } },
+      { $match: baseMatch },
       { $group: { _id: "$structureTypeValue", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
+      { $sort: { count: -1 as const } },
     ]),
     Site.aggregate([
-      { $match: { projectId: { $toObjectId: pid } as any, isDeleted: { $ne: true } } },
+      { $match: baseMatch },
       { $group: { _id: "$provider", count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
+      { $sort: { count: -1 as const } },
     ]),
     Site.aggregate([
-      { $match: { projectId: { $toObjectId: pid } as any, isDeleted: { $ne: true } } },
+      { $match: baseMatch },
       { $group: { _id: null, total: { $sum: 1 }, avgHeight: { $avg: "$structureHeight" } } },
     ]),
-    ImportBatch.findOne({ projectId: pid }).sort("-uploadedAt").select("uploadedAt").lean(),
+    ImportBatch.findOne({ projectId }).sort("-uploadedAt").select("uploadedAt").lean(),
     Site.findOne({ projectId: pid, isDeleted: { $ne: true } }).sort("-updatedAt").select("updatedAt").lean(),
   ]);
 
