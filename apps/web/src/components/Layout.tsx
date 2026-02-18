@@ -44,7 +44,9 @@ export function Layout() {
             ))}
           </nav>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">{user?.name || user?.email}</span>
+            <Link to="/profile" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+              {user?.name || user?.email}
+            </Link>
             <Button variant="ghost" size="sm" onClick={handleLogout}>
               Log out
             </Button>

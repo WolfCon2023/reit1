@@ -96,6 +96,8 @@ export function Dashboard() {
         </Card>
       )}
 
+      <ActivityFeed />
+
       <Card>
         <CardHeader>
           <CardTitle>Getting Started</CardTitle>
@@ -109,4 +111,47 @@ export function Dashboard() {
       </Card>
     </div>
   );
+}
+
+function ActivityFeed() {
+  const { data } = useQuery({
+    queryKey: ["activity-feed"],
+    queryFn: () => api<{ items: { _id: string; label: string; actorEmail: string; resourceType: string; createdAt: string }[] }>("/api/activity?limit=10"),
+  });
+
+  const items = data?.items ?? [];
+  if (items.length === 0) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Recent Activity</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {items.map((item) => (
+            <div key={item._id} className="flex items-center justify-between text-sm border-b pb-2 last:border-0">
+              <div>
+                <span className="font-medium">{item.actorEmail}</span>
+                <span className="text-muted-foreground ml-1">{item.label}</span>
+              </div>
+              <span className="text-xs text-muted-foreground">{formatRelative(item.createdAt)}</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function formatRelative(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
 }

@@ -187,6 +187,11 @@ export function ProjectDashboard() {
             <Link to={`/projects/${projectId}/insights`}>Insights</Link>
           </Button>
         )}
+        {hasLeasesRead && (
+          <Button variant="outline" asChild>
+            <Link to={`/projects/${projectId}/renewals`}>Renewals</Link>
+          </Button>
+        )}
         {hasImport && (
           <Button variant="outline" asChild>
             <Link to={`/projects/${projectId}/import`}>Import Sites</Link>

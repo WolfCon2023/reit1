@@ -22,6 +22,8 @@ import { ProjectLeases } from "@/pages/ProjectLeases";
 import { ProjectLeaseForm } from "@/pages/ProjectLeaseForm";
 import { ProjectDocuments } from "@/pages/ProjectDocuments";
 import { ProjectInsights } from "@/pages/ProjectInsights";
+import { Profile } from "@/pages/Profile";
+import { ProjectRenewals } from "@/pages/ProjectRenewals";
 import { PERMISSIONS } from "@/lib/permissions";
 
 const queryClient = new QueryClient({
@@ -91,6 +93,7 @@ export default function App() {
               <Route path="projects/:projectId/leases/:leaseId/edit" element={<RequirePermission permission={PERMISSIONS.LEASES_WRITE}><ProjectLeaseForm /></RequirePermission>} />
               <Route path="projects/:projectId/documents" element={<RequirePermission permission={PERMISSIONS.DOCUMENTS_READ}><ProjectDocuments /></RequirePermission>} />
               <Route path="projects/:projectId/insights" element={<RequirePermission permission={PERMISSIONS.INSIGHTS_READ}><ProjectInsights /></RequirePermission>} />
+              <Route path="projects/:projectId/renewals" element={<RequirePermission permission={PERMISSIONS.LEASES_READ}><ProjectRenewals /></RequirePermission>} />
               <Route path="projects/:projectId/import" element={<RequirePermission permission={PERMISSIONS.IMPORT_RUN}><ImportPage /></RequirePermission>} />
 
               {/* Legacy flat routes (kept for backward compat) */}
@@ -99,6 +102,7 @@ export default function App() {
               <Route path="sites/:id" element={<RequirePermission permission={PERMISSIONS.SITES_READ}><SiteDetail /></RequirePermission>} />
               <Route path="sites/:id/edit" element={<RequirePermission permission={PERMISSIONS.SITES_WRITE}><SiteForm /></RequirePermission>} />
 
+              <Route path="profile" element={<Profile />} />
               <Route path="import" element={<RequirePermission permission={PERMISSIONS.IMPORT_RUN}><ImportPage /></RequirePermission>} />
               <Route path="admin" element={<RequirePermission permission={PERMISSIONS.USERS_READ}><Admin /></RequirePermission>} />
               <Route path="admin/*" element={<RequirePermission permission={PERMISSIONS.USERS_READ}><Admin /></RequirePermission>} />

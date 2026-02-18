@@ -1,6 +1,7 @@
+import { useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, getBaseUrl } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { PERMISSIONS } from "@/lib/permissions";
@@ -49,11 +50,24 @@ interface SiteDoc {
   uploadedAt: string;
 }
 
+interface SitePhoto {
+  _id: string;
+  title: string;
+  filename: string;
+  mimeType: string;
+  sizeBytes: number;
+  isPrimary: boolean;
+  createdAt: string;
+}
+
 export function ProjectSiteDetail() {
   const { projectId, id } = useParams<{ projectId: string; id: string }>();
+  const queryClient = useQueryClient();
   const hasWrite = useAuthStore((s) => s.hasPermission(PERMISSIONS.SITES_WRITE));
   const hasLeases = useAuthStore((s) => s.hasPermission(PERMISSIONS.LEASES_READ));
   const hasDocs = useAuthStore((s) => s.hasPermission(PERMISSIONS.DOCUMENTS_READ));
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: projectData } = useQuery({
     queryKey: ["projects", projectId, "meta"],
@@ -78,6 +92,38 @@ export function ProjectSiteDetail() {
     queryFn: () => api<{ items: SiteDoc[] }>(`/api/projects/${projectId}/documents?siteId=${id}&pageSize=10`),
     enabled: !!projectId && !!id && hasDocs,
   });
+
+  const { data: photosData } = useQuery({
+    queryKey: ["projects", projectId, "sites", id, "photos"],
+    queryFn: () => api<{ items: SitePhoto[] }>(`/api/projects/${projectId}/sites/${id}/photos`),
+    enabled: !!projectId && !!id,
+  });
+
+  const deletePhotoMut = useMutation({
+    mutationFn: (photoId: string) => api(`/api/projects/${projectId}/sites/${id}/photos/${photoId}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects", projectId, "sites", id, "photos"] }),
+  });
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("photo", file);
+      fd.append("title", file.name);
+      const token = localStorage.getItem("accessToken");
+      await fetch(`${getBaseUrl()}/api/projects/${projectId}/sites/${id}/photos`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+      });
+      queryClient.invalidateQueries({ queryKey: ["projects", projectId, "sites", id, "photos"] });
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
 
   if (isLoading) {
     return (
@@ -219,6 +265,57 @@ export function ProjectSiteDetail() {
           </CardContent>
         </Card>
       )}
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Photos</CardTitle>
+          {hasWrite && (
+            <div>
+              <input ref={fileRef} type="file" accept="image/*" onChange={handlePhotoUpload} className="hidden" />
+              <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
+                {uploading ? "Uploading..." : "Upload Photo"}
+              </Button>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent>
+          {(photosData?.items ?? []).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No photos for this site.</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {(photosData?.items ?? []).map((photo) => (
+                <div key={photo._id} className="relative group rounded-lg overflow-hidden border">
+                  <img
+                    src={`${getBaseUrl()}/api/projects/${projectId}/sites/${id}/photos/${photo._id}/file`}
+                    alt={photo.title}
+                    className="w-full h-32 object-cover"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-end">
+                    <div className="w-full p-2 text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-xs font-medium truncate">{photo.title}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs">{(photo.sizeBytes / 1024).toFixed(0)} KB</span>
+                        {hasWrite && (
+                          <button
+                            onClick={() => deletePhotoMut.mutate(photo._id)}
+                            className="text-xs text-red-300 hover:text-red-100"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  {photo.isPrimary && (
+                    <span className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 rounded">Primary</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

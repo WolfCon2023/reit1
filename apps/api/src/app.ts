@@ -22,6 +22,11 @@ import projectDocumentsRoutes from "./routes/projectDocuments.js";
 import projectInsightsRoutes from "./routes/projectInsights.js";
 import projectViewsRoutes from "./routes/projectViews.js";
 import featuresRoutes from "./routes/features.js";
+import activityRoutes from "./routes/activity.js";
+import profileRoutes from "./routes/profile.js";
+import projectReportsRoutes from "./routes/projectReports.js";
+import projectPhotosRoutes from "./routes/projectPhotos.js";
+import projectRenewalsRoutes from "./routes/projectRenewals.js";
 
 const app = express();
 
@@ -59,8 +64,13 @@ app.use("/api/projects/:projectId/revenue", projectRevenueRoutes);
 app.use("/api/projects/:projectId/documents", projectDocumentsRoutes);
 app.use("/api/projects/:projectId/insights", projectInsightsRoutes);
 app.use("/api/projects/:projectId/views", projectViewsRoutes);
+app.use("/api/projects/:projectId/reports", projectReportsRoutes);
+app.use("/api/projects/:projectId/sites", projectPhotosRoutes);
+app.use("/api/projects/:projectId/renewals", projectRenewalsRoutes);
 app.use("/api/metrics", globalMetricsRoutes);
 app.use("/api/features", featuresRoutes);
+app.use("/api/activity", activityRoutes);
+app.use("/api/profile", profileRoutes);
 app.use("/api/admin", adminRoutes);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

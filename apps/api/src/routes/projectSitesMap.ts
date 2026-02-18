@@ -56,6 +56,39 @@ router.get("/", requireAuth, requirePermission(PERMISSIONS.SITES_READ), async (r
   res.json({ items: sites, count: sites.length });
 });
 
+router.get("/radius", requireAuth, requirePermission(PERMISSIONS.SITES_READ), async (req, res) => {
+  const { projectId } = req.params;
+  const proj = await resolveProject(projectId);
+  if (!proj) { res.status(404).json({ error: "Project not found" }); return; }
+
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  const radiusMiles = Number(req.query.radius) || 10;
+
+  if (isNaN(lat) || isNaN(lng)) {
+    res.status(400).json({ error: "lat and lng are required" });
+    return;
+  }
+
+  const radiusMeters = radiusMiles * 1609.34;
+
+  const sites = await Site.find({
+    projectId: proj._id,
+    isDeleted: { $ne: true },
+    siteLocation: {
+      $nearSphere: {
+        $geometry: { type: "Point", coordinates: [lng, lat] },
+        $maxDistance: radiusMeters,
+      },
+    },
+  })
+    .select("siteId siteName address city stateValue provider structureTypeValue structureHeight latitude longitude")
+    .limit(500)
+    .lean();
+
+  res.json({ items: sites, count: sites.length, center: { lat, lng }, radiusMiles });
+});
+
 router.get("/geojson", requireAuth, requirePermission(PERMISSIONS.SITES_READ), async (req, res) => {
   const { projectId } = req.params;
   const proj = await resolveProject(projectId);
