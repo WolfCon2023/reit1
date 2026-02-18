@@ -1,8 +1,19 @@
 import { AuditLog } from "../models/index.js";
+import { config } from "../config.js";
 import type { RequestUser } from "@reit1/shared";
 
 const METADATA_MAX_KEYS = 20;
 const METADATA_VALUE_MAX_LEN = 500;
+
+let runtimeEnabled = config.auditLoggingEnabled;
+
+export function isAuditEnabled(): boolean {
+  return runtimeEnabled;
+}
+
+export function setAuditEnabled(enabled: boolean): void {
+  runtimeEnabled = enabled;
+}
 
 function truncateMetadata(obj: Record<string, unknown>): Record<string, unknown> {
   const entries = Object.entries(obj).slice(0, METADATA_MAX_KEYS);
@@ -24,6 +35,7 @@ export async function logAudit(
   resourceId?: string,
   metadata?: Record<string, unknown>
 ): Promise<void> {
+  if (!runtimeEnabled) return;
   try {
     await AuditLog.create({
       actorUserId: user.userId,
