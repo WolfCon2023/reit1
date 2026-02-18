@@ -38,7 +38,9 @@ router.get("/", requireAuth, async (req, res) => {
   const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
   const projectId = req.query.projectId ? String(req.query.projectId) : undefined;
 
-  const filter: Record<string, unknown> = {};
+  const filter: Record<string, unknown> = {
+    actorId: req.user!._id.toString(),
+  };
   if (projectId) {
     filter["metadata.projectId"] = projectId;
   }

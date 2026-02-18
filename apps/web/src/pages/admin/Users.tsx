@@ -45,7 +45,9 @@ export function Users() {
     queryFn: () => api<RoleOption[]>("/api/admin/roles"),
   });
 
-  const roleOptions = roles ?? [];
+  const roleOptions = (roles ?? []).filter(
+    (r, i, arr) => arr.findIndex((x) => x.name === r.name) === i
+  );
 
   const createMutation = useMutation({
     mutationFn: (body: { email: string; name: string; password: string; roleIds: string[] }) =>

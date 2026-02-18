@@ -6,7 +6,22 @@ import { config } from "../config.js";
 import { ROLE_NAMES, ROLE_PERMISSIONS } from "@reit1/shared";
 import { migrateProjects } from "./migrateProjects.js";
 
+async function deduplicateRoles(): Promise<void> {
+  const pipeline = [
+    { $group: { _id: "$name", ids: { $push: "$_id" }, count: { $sum: 1 } } },
+    { $match: { count: { $gt: 1 } } },
+  ];
+  const dupes = await Role.aggregate(pipeline);
+  for (const d of dupes) {
+    const [_keep, ...remove] = d.ids as string[];
+    await Role.deleteMany({ _id: { $in: remove } });
+    console.log(`Seed: Removed ${remove.length} duplicate "${d._id}" role(s).`);
+  }
+}
+
 export async function seed(): Promise<void> {
+  await deduplicateRoles();
+
   const count = await Role.countDocuments();
   if (count > 0) {
     // Sync system role permissions with the latest definitions so newly
